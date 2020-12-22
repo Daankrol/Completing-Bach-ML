@@ -95,10 +95,20 @@ def use_manual_split(voice, voice_windows):
 
     window_model = LinearRegression()
     window_model.fit(X_train, y_train)
-    y_predictions = window_model.predict(X_test)
+
+    y_predictions = []
+
+    for i in range(2200, 3500):
+        last_window = voice_windows[-1]
+        new_x = last_window[1:]  # shift one right
+        new_y = window_model.predict([new_x])[0]
+        y_predictions.append(new_y)
+        new_window = np.append(new_x, new_y)
+        voice_windows = np.vstack([voice_windows, new_window])
+
     plt.clf()
     plt.plot(voice, 'b-')
-    plt.plot(range(2200, len(voice_windows)), y_predictions, 'r--')
+    plt.plot(range(2200, 3500), y_predictions, 'r--')
     plt.savefig('ownFold.png')
 
 
@@ -123,5 +133,5 @@ def predict_new_data(voice, original_windows):
 
 
 voice_windows = construct_windows(voice_4, 16)
-# use_manual_split(voice_4, voice_windows)
-predict_new_data(voice_4, voice_windows)
+use_manual_split(voice_4, voice_windows)
+# predict_new_data(voice_4, voice_windows)
