@@ -18,10 +18,47 @@ def get_voice(voice_number):
     return voice
 
 
-def get_pitch_duration_pairs(voice_number=1, method='cumulative'):
+def get_input_output(voice_number=0, method='cumulative', window_size=3):
+    pairs = get_pitch_duration_pairs(voice_number=voice_number, method=method)
+
+    pairs= pairs[0:4]
+
+    pitch_array = [p[0] for p in pairs]
+    duration_array = [p[1] for p in pairs]
+
+    pitch_input = []
+    duration_input = []
+    output = []
+
+    if method == 'shift':
+        pitch_input, output = construct_windows(data=pitch_array, window_size=window_size)
+        duration_input, waste = construct_windows(data=duration_array, window_size=window_size)
+
+    if method == 'cumulative':
+        pitch_input = []
+        duration_input = []
+        output = []
+        for i in range(window_size-1, len(pairs)):
+            if duration_array[i] == 1:
+                continue
+            else:
+                for j in range(1, duration_array[i]+1):
+                    p = pitch_array[i-window_size+1:i+1]
+                    d = duration_array[i-window_size+1:i]+[j]
+                    o = pitch_array[i]
+
+                    pitch_input.append(p)
+                    duration_input.append(d)
+                    output.append(o)
+
+    inputs = [pitch_input, duration_input]
+
+    return inputs, output
+
+def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
     """
     Translate to additive pitch duration pairs
-    :param method: Cumulative or Shift
+    :param method: 'cumulative' or 'shift'
     :return:
     :param voice_number:
     :return:
@@ -80,3 +117,16 @@ def get_log_pitch(midi_note):
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch
+
+
+def construct_windows(data, window_size):
+    windows_in = []
+    windows_out = []
+    for i in range(len(data)):
+        if i+window_size + 1 > len(data) - 1:  # out of bounds
+            break
+        w = data[i:i+window_size]  # +1 for y-value
+        o = data[i+window_size]
+        windows_in.append(w)
+        windows_out.append(o)
+    return np.array(windows_in), np.array(windows_out)
