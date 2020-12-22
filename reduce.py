@@ -1,9 +1,9 @@
 import numpy as np
-from sklearn import preprocessing
+# from sklearn import preprocessing
 
 
 # read info from file
-file_input = open("F.txt",'r')
+file_input = open("F.txt", 'r')
 sounds = file_input.readlines()
 
 voice_1 = []
@@ -21,26 +21,19 @@ for i in range(0,len(sounds)):
 
 ### translate to pitch duration pairs
 def reduce_to_pairs(dat):
-
     pairs = []
     i=0
-
     while i < len(dat):
         duration = 1
-        while i+1 < len(dat) and dat[i+1]==dat[i]:
-            if duration == 16:
-                pairs.append([dat[i], duration])
-                duration = 1
-            else:
-                duration += 1 
+        while i+1 < len(dat) and dat[i+1] == dat[i]:
+            duration += 1
             i += 1
         pairs.append([dat[i], duration])
         i += 1
-
     return pairs
 
 pairs_4 = reduce_to_pairs(voice_4)
 
 print(len(voice_4))
 print(len(pairs_4))
-print(pairs_4[1:10])
+print(pairs_4[0:len(pairs_4)])
