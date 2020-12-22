@@ -21,8 +21,14 @@ def get_voice(voice_number):
 def get_input_output(voice_number=0, method='cumulative', window_size=3):
     pairs = get_pitch_duration_pairs(voice_number=voice_number, method=method)
 
+    pairs= pairs[0:4]
+
     pitch_array = [p[0] for p in pairs]
     duration_array = [p[1] for p in pairs]
+
+    pitch_input = []
+    duration_input = []
+    output = []
 
     if method == 'shift':
         pitch_input, output = construct_windows(data=pitch_array, window_size=window_size)
@@ -45,10 +51,9 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
                     duration_input.append(d)
                     output.append(o)
 
-    inputs = []
-    inputs.append(pitch_input, duration_input)
+    inputs = [pitch_input, duration_input]
 
-    return (inputs, output)
+    return inputs, output
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
     """

@@ -62,6 +62,7 @@ def construct_windows(voice, window_size):
 
         w = voice[i:i+window_size+1]  # +1 for y-value
         windows.append(w)
+    print(np.array(windows)[0:5])
     return np.array(windows)
 
 
