@@ -21,8 +21,6 @@ def get_voice(voice_number):
 def get_input_output(voice_number=0, method='cumulative', window_size=3):
     pairs = get_pitch_duration_pairs(voice_number=voice_number, method=method)
 
-    pairs= pairs[0:4]
-
     pitch_array = [p[0] for p in pairs]
     duration_array = [p[1] for p in pairs]
 
@@ -31,13 +29,20 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
     output = []
 
     if method == 'shift':
-        pitch_input, output = construct_windows(data=pitch_array, window_size=window_size)
-        duration_input, waste = construct_windows(data=duration_array, window_size=window_size)
+        # pitch_input, output = construct_windows(data=pitch_array, window_size=window_size)
+        # duration_input, waste = construct_windows(data=duration_array, window_size=window_size)
+        # no additional function to spare looping multiple times
+        for i in range(len(pairs)):
+            if i+window_size > len(pairs) -1 :  # out of bounds
+                break
+            p = pitch_array[i:i+window_size]  # +1 for y-value
+            d = duration_array[i:i+window_size]
+            o = pitch_array[i+window_size]
+            pitch_input.append(p)
+            duration_input.append(d)
+            output.append(o)
 
-    if method == 'cumulative':
-        pitch_input = []
-        duration_input = []
-        output = []
+    elif method == 'cumulative':
         for i in range(window_size-1, len(pairs)):
             if duration_array[i] == 1:
                 continue
@@ -54,6 +59,45 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
     inputs = [pitch_input, duration_input]
 
     return inputs, output
+
+def add_predicted_value(inputs, predicted, method='cumulative'):
+    """
+    Add the newly predicted pitch value to the input data
+    :param inputs:
+    :param predicted:
+    :param method: 
+    """
+
+    if method == 'shift':
+        inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
+        if predicted == inputs[0][-1][-2]: # predicted is same as previous pitch
+            prev_dur = inputs[1][-1][-1]
+            inputs[1].append(inputs[1][-1][1:]+[prev_dur+1]) # shift window and append duration value that is an increment of the d at t-1
+        else: # predicted not the same as previous pitch
+            print('here')
+            inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
+
+    if method == 'cumulative':
+        if predicted == inputs[0][-1][-1]: # predicted is same as previous pitch
+            inputs[0].append(inputs[0][-1]) # window shift results in the same pitch input
+            prev_dur = inputs[1][-1][-1]
+            inputs[1].append(inputs[1][-1][:-1]+[prev_dur+1]) # window shift results in an increment of the duration value at the d at t-1
+        else: # predicted not the same as previous pitch
+            inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
+            inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
+
+def construct_windows(data, window_size):
+    windows_in = []
+    windows_out = []
+    for i in range(len(data)):
+        if i+window_size + 1 > len(data) - 1:  # out of bounds
+            break
+        w = data[i:i+window_size]  # +1 for y-value
+        o = data[i+window_size]
+        windows_in.append(w)
+        windows_out.append(o)
+    return np.array(windows_in), np.array(windows_out)
+
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
     """
@@ -117,16 +161,3 @@ def get_log_pitch(midi_note):
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch
-
-
-def construct_windows(data, window_size):
-    windows_in = []
-    windows_out = []
-    for i in range(len(data)):
-        if i+window_size + 1 > len(data) - 1:  # out of bounds
-            break
-        w = data[i:i+window_size]  # +1 for y-value
-        o = data[i+window_size]
-        windows_in.append(w)
-        windows_out.append(o)
-    return np.array(windows_in), np.array(windows_out)
