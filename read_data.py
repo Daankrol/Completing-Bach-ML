@@ -1,5 +1,5 @@
 import numpy as np
-
+import random
 
 def get_voice(voice_number):
     """
@@ -18,8 +18,17 @@ def get_voice(voice_number):
     return voice
 
 
-def get_input_output(voice_number=0, method='cumulative', window_size=3):
+def get_input_output(voice_number=0, method='cumulative', prob_method=None, window_size=3):
+    """
+    :param voice_number: 0 t/m 3
+    :param method: 'cumulative' or 'shift'
+    :param prob_method: provide output as probability vector. None, 'range', 'values'
+    :param window_size:
+    """
     pairs = get_pitch_duration_pairs(voice_number=voice_number, method=method)
+
+    pairs = pairs[:10]
+    print(pairs)
 
     pitch_array = [p[0] for p in pairs]
     duration_array = [p[1] for p in pairs]
@@ -35,7 +44,7 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
         for i in range(len(pairs)):
             if i+window_size > len(pairs) -1 :  # out of bounds
                 break
-            p = pitch_array[i:i+window_size]  # +1 for y-value
+            p = pitch_array[i:i+window_size]
             d = duration_array[i:i+window_size]
             o = pitch_array[i+window_size]
             pitch_input.append(p)
@@ -43,10 +52,12 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
             output.append(o)
 
     elif method == 'cumulative':
+        flag = 0
         for i in range(window_size-1, len(pairs)):
-            if duration_array[i] == 1:
-                continue
-            else:
+            if duration_array[i] == 1 and flag==0: # TODO: this is not perfect but the problem scenario dow not occur in our data, this is probbibly not the preferred method anyway
+                flag=1
+            else: 
+                flag=1
                 for j in range(1, duration_array[i]+1):
                     p = pitch_array[i-window_size+1:i+1]
                     d = duration_array[i-window_size+1:i]+[j]
@@ -56,9 +67,70 @@ def get_input_output(voice_number=0, method='cumulative', window_size=3):
                     duration_input.append(d)
                     output.append(o)
 
+    key = [] # later used for making a prediciton from the proability vector
+
+    if prob_method != None:
+        output = np.array(output)
+        if prob_method == "range": # use entire range of pitch
+            temp=np.where(output == 0)
+            nonzero_min = min(np.delete(output, temp))
+            output_prob = np.zeros((len(output), ( max(output) - nonzero_min + 1 + 1 ) ), dtype=int) # +1 for inclusion of max and for zero tone
+            for i in range(len(output)):
+                if output[i] == 0:
+                    output_prob[i][0] = 1
+                else: 
+                    output_prob[i][output[i]-nonzero_min+1] = 1
+
+            key = np.append([0], np.arange(nonzero_min, max(output) + 1, 1))
+
+        elif prob_method == "values": # use only before seen pitch values
+            pitch_unique = np.unique(output)
+            output_prob = np.zeros((len(output), len(pitch_unique)), dtype=int)
+            for i in range(len(output)):
+                output_prob[i][np.where(pitch_unique==output[i])] = 1
+
+            key = pitch_unique
+        
+        output = output_prob
+
     inputs = [pitch_input, duration_input]
 
-    return inputs, output
+    return inputs, output, key
+
+def get_pitch_from_probability(prob, key, method="highest"):
+    """
+    Select a pitch value given a probability vector
+    :param prob: the key given during i/o creation
+    :param output: the original teacher values
+    :param select_method "highest", "topN", "weighted", "random"
+    """
+    if method[:3] == "top": # equal chance for top n
+        top_n = []
+        if int(method[3:])>len(key):
+            exit('ERROR: Selecting top n values but n is larger than number of possible outcomes. Select n<=%d' % len(key))
+        for i in range(int(method[3:])):
+            idx = random.choice(np.where(prob==max(prob))[0])
+            # idx = idx if type()
+            top_n.append(key[idx])
+            prob[idx] = 0
+
+        predicted = random.choice(top_n)
+
+    if method == 'weighted': 
+        idx = random.choices(range(len(prob)), weights=prob)[0]
+        predicted = key[idx] 
+
+    if method == 'highest':
+        idx = np.where(prob==max(prob))
+        predicted = key[idx] 
+        if type(predicted) != int: # in case there are two probabilities with equal value
+            predicted = random.choice(predicted)
+    
+    if method == 'random':
+        predicted = random.choice(key)
+        
+    return predicted
+
 
 def add_predicted_value(inputs, predicted, method='cumulative'):
     """
@@ -67,14 +139,12 @@ def add_predicted_value(inputs, predicted, method='cumulative'):
     :param predicted:
     :param method: 
     """
-
     if method == 'shift':
         inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
         if predicted == inputs[0][-1][-2]: # predicted is same as previous pitch
             prev_dur = inputs[1][-1][-1]
             inputs[1].append(inputs[1][-1][1:]+[prev_dur+1]) # shift window and append duration value that is an increment of the d at t-1
         else: # predicted not the same as previous pitch
-            print('here')
             inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
 
     if method == 'cumulative':
@@ -85,18 +155,6 @@ def add_predicted_value(inputs, predicted, method='cumulative'):
         else: # predicted not the same as previous pitch
             inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
             inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
-
-def construct_windows(data, window_size):
-    windows_in = []
-    windows_out = []
-    for i in range(len(data)):
-        if i+window_size + 1 > len(data) - 1:  # out of bounds
-            break
-        w = data[i:i+window_size]  # +1 for y-value
-        o = data[i+window_size]
-        windows_in.append(w)
-        windows_out.append(o)
-    return np.array(windows_in), np.array(windows_out)
 
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
@@ -161,3 +219,21 @@ def get_log_pitch(midi_note):
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch
+
+inputs, output, key = get_input_output(voice_number=3, method='cumulative',  prob_method='range', window_size=3)
+print('input 1:', inputs[0])
+print('input 2:', inputs[1])
+print('output:', output)
+
+prob=np.zeros(len(key))
+prob[1]=0.5
+# prob[6]=.25
+# prob[7]=.25
+
+predicted = get_pitch_from_probability(prob, key, method='top12')
+print('predicted:', predicted)
+
+add_predicted_value(inputs, predicted)
+
+print('input 1:', inputs[0])
+print('input 2:', inputs[1])
