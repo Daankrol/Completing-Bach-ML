@@ -27,9 +27,6 @@ def get_input_output(voice_number=0, method='cumulative', prob_method=None, wind
     """
     pairs = get_pitch_duration_pairs(voice_number=voice_number, method=method)
 
-    pairs = pairs[:10]
-    print(pairs)
-
     pitch_array = [p[0] for p in pairs]
     duration_array = [p[1] for p in pairs]
 
@@ -132,7 +129,7 @@ def get_pitch_from_probability(prob, key, method="highest"):
     return predicted
 
 
-def add_predicted_value(inputs, predicted, method='cumulative'):
+def add_predicted_value_old(inputs, predicted, method='cumulative'):
     """
     Add the newly predicted pitch value to the input data
     :param inputs:
@@ -155,6 +152,32 @@ def add_predicted_value(inputs, predicted, method='cumulative'):
         else: # predicted not the same as previous pitch
             inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
             inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
+
+def add_predicted_value(inputs, predicted, method='cumulative'):
+    """
+    Add the newly predicted pitch value to the input data
+    :param inputs:
+    :param predicted:
+    :param method: 
+    """
+    old_input = inputs[-1]
+    old_pitch = inputs[-1][::2] #pitch at even indices
+    old_duration = inputs[-1][1::2] # duration at odd indices
+    if method == 'shift':
+        if predicted ==  old_pitch[-1]: # predicted is same as previous pitch
+            new_duration = old_duration[-1] + 1
+            new_input = old_input[2:]+[predicted]+[new_duration]
+        else:
+            new_input = old_input[2:]+[predicted]+[1]
+
+    if method == 'cumulative':
+        if predicted ==  old_pitch[-1]: # predicted is same as previous pitch
+            new_duration = old_duration[-1] + 1
+            new_input = old_input[:-1]+[new_duration]
+        else:
+            new_input = old_input[2:]+[predicted]+[1]
+    
+    inputs.append(new_input)
 
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
@@ -220,20 +243,20 @@ def get_log_pitch(midi_note):
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch
 
-inputs, output, key = get_input_output(voice_number=3, method='cumulative',  prob_method='range', window_size=3)
-print('input 1:', inputs[0])
-print('input 2:', inputs[1])
-print('output:', output)
+# inputs, output, key = get_input_output(voice_number=3, method='cumulative',  prob_method='range', window_size=3)
+# print('input 1:', inputs[0])
+# print('input 2:', inputs[1])
+# print('output:', output)
 
-prob=np.zeros(len(key))
-prob[1]=0.5
-# prob[6]=.25
-# prob[7]=.25
+# prob=np.zeros(len(key))
+# prob[1]=0.5
+# # prob[6]=.25
+# # prob[7]=.25
 
-predicted = get_pitch_from_probability(prob, key, method='top12')
-print('predicted:', predicted)
+# predicted = get_pitch_from_probability(prob, key, method='top12')
+# print('predicted:', predicted)
 
-add_predicted_value(inputs, predicted)
+# add_predicted_value(inputs, predicted)
 
-print('input 1:', inputs[0])
-print('input 2:', inputs[1])
+# print('input 1:', inputs[0])
+# print('input 2:', inputs[1])
