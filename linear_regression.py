@@ -4,8 +4,64 @@ from sklearn.model_selection import KFold
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import copy
-from read_data import get_pitch_duration_pairs, get_voice
+import itertools
+
+from sklearn.utils import _pandas_indexing
+from read_data import get_input_output, get_pitch_duration_pairs, get_pitch_features, get_voice
 mpl.use('TkAgg')
+
+
+def predict_bach():
+    method = 'cumulative'
+    prob_method = 'values'
+    inputs, outputs, key = get_input_output(
+        voice_number=0, method=method, prob_method=prob_method, window_size=3)
+    pitches = inputs[0][:2200]
+    durations = inputs[1][:2200]
+    teacher_values = outputs[:2200]
+    pitch_features = []
+
+    for window in pitches:
+        # w_features = []
+        # for p in window:
+        #     w_features.append()
+        window_features = [get_pitch_features(p) for p in window]
+        window_features = list(itertools.chain.from_iterable(window_features))
+        pitch_features.append(window_features)
+
+    print('pf', pitch_features[0])
+    print('d', durations[0])
+
+    pd_windows = []
+    for i in range(len(pitches)):
+        pd_windows.append(pitch_features[i] + durations[i])
+
+    print('\n\n\n', pd_windows[0])
+    # exit()
+
+    model = LinearRegression()
+    model.fit(pd_windows, teacher_values)
+
+    # for x in range(2200, 2400):
+    ps = []
+    for x in range(2200):
+        probs = model.predict([pd_windows[x]])[0] * 100
+        ps.append(key[np.where(probs == max(probs))][0])
+
+    with open('supreme_bach.txt', 'a') as file:
+        for p in ps:
+            file.write(str(p) + '\n')
+        file.close()
+
+    # plt.clf()
+    # voice = get_voice(0)
+    # plt.plot(voice[:2200], 'b-')
+    # plt.plot(ps[:2200], 'r--')
+    # plt.savefig('mulivariate_linear_regression_' + method + '.png')
+    # plt.show()
+
+
+predict_bach()
 
 
 def construct_windows(pd_pairs, window_size):
@@ -86,13 +142,13 @@ def use_manual_split(voice, windows):
     plt.savefig('ownFold.png')
 
 
-voice = get_voice(voice_number=3)
-pd_pairs = get_pitch_duration_pairs(voice_number=3, method='shift')
-windows = construct_windows(pd_pairs, 16)
+# voice = get_voice(voice_number=3)
+# pd_pairs = get_pitch_duration_pairs(voice_number=3, method='shift')
+# windows = construct_windows(pd_pairs, 16)
 
-use_manual_split(voice, windows)
+# use_manual_split(voice, windows)
 
 
 # 5 keys
 # key 1 = [1, 0,0,0,0]
-[0, 43, 44, 45]
+# [0, 43, 44, 45]
