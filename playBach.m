@@ -1,13 +1,13 @@
 % play solutions
-addpath('./supreme_bach.txt');
+addpath('supreme_bach.txt');
 
 % load the data: 2 voices in columns
-load F.txt -ascii;
+load supreme_bach.txt -ascii;
 %%%%%%%% transform a voice into a soundvector that can be played by Matlab 
 
 % choose a voice 
 chosenVoice = 1;
-voice = F(:,chosenVoice);
+voice = supreme_bach(:,chosenVoice);
 % plot it to get the Bach feeling 
 % figure(1); plot(voice);
 
