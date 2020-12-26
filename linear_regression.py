@@ -7,7 +7,7 @@ import copy
 import itertools
 
 from sklearn.utils import _pandas_indexing
-from read_data import get_input_output, get_pitch_duration_pairs, get_pitch_features, get_voice
+from read_data import add_predicted_value, get_input_output, get_pitch_duration_pairs, get_pitch_features, get_pitch_from_probability, get_voice
 mpl.use('TkAgg')
 
 
@@ -15,30 +15,35 @@ def predict_bach():
     method = 'cumulative'
     prob_method = 'values'
     inputs, outputs, key = get_input_output(
-        voice_number=0, method=method, prob_method=prob_method, window_size=4, use_features=True)
-    inputs_windows = inputs[:2200]
-    teacher_values = outputs[:2200]
+        voice_number=0, method=method, prob_method=prob_method, window_size=32, use_features=True)
+
+    # input_windows = inputs[:2200]
+    # teacher_values = outputs[:2200]
 
     model = LinearRegression()
-    model.fit(inputs_windows, teacher_values)
+    model.fit(inputs, outputs)
 
     # for x in range(2200, 2400):
-    ps = []
-    for x in range(2200):
-        probs = model.predict([inputs_windows[x]])[0] * 100
-        ps.append(key[np.where(probs == max(probs))][0])
+    predictions = []
+    for x in range(1000):
+        probs = model.predict([inputs[-1]])[0]
+        predicted_pitch = get_pitch_from_probability(
+            probs, key, method="weighted")
+        predictions.append(predicted_pitch)
+        add_predicted_value(inputs, predicted_pitch,
+                            method=method, use_features=True)
 
     with open('supreme_bach.txt', 'a') as file:
-        for p in ps:
+        for p in predictions:
             file.write(str(p) + '\n')
         file.close()
 
-    # plt.clf()
-    # voice = get_voice(0)
-    # plt.plot(voice[:2200], 'b-')
-    # plt.plot(ps[:2200], 'r--')
-    # plt.savefig('mulivariate_linear_regression_' + method + '.png')
-    # plt.show()
+    plt.clf()
+    voice = get_voice(0)
+    plt.plot(voice, 'b-')
+    plt.plot(range(len(voice), len(voice)+len(predictions)), predictions, 'r--')
+    plt.savefig('mulivariate_linear_regression_' + method + '.png')
+    plt.show()
 
 
 predict_bach()

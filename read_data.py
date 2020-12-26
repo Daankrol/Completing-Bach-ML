@@ -20,7 +20,7 @@ def get_voice(voice_number):
     return voice
 
 
-def get_input_output(voice_number=0, method='cumulative', prob_method=None, window_size=3, use_features=False):
+def get_input_output(voice_number=0, method='cumulative', prob_method=None, window_size=16, use_features=False):
     """
     :param voice_number: 0 t/m 3
     :param method: 'cumulative' or 'shift'
