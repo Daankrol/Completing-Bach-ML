@@ -16,40 +16,16 @@ def predict_bach():
     prob_method = 'values'
     inputs, outputs, key = get_input_output(
         voice_number=0, method=method, prob_method=prob_method, window_size=4, use_features=True)
-    pitches = inputs[0][:2200]
-    durations = inputs[1][:2200]
+    inputs_windows = inputs[:2200]
     teacher_values = outputs[:2200]
-    pitch_features = []
-    
-    for i in inputs:
-        print(i)
-    exit()
-
-    for window in pitches:
-        # w_features = []
-        # for p in window:
-        #     w_features.append()
-        window_features = [get_pitch_features(p) for p in window]
-        window_features = list(itertools.chain.from_iterable(window_features))
-        pitch_features.append(window_features)
-
-    print('pf', pitch_features[0])
-    print('d', durations[0])
-
-    pd_windows = []
-    for i in range(len(pitches)):
-        pd_windows.append(pitch_features[i] + durations[i])
-
-    print('\n\n\n', pd_windows[0])
-    # exit()
 
     model = LinearRegression()
-    model.fit(pd_windows, teacher_values)
+    model.fit(inputs_windows, teacher_values)
 
     # for x in range(2200, 2400):
     ps = []
     for x in range(2200):
-        probs = model.predict([pd_windows[x]])[0] * 100
+        probs = model.predict([inputs_windows[x]])[0] * 100
         ps.append(key[np.where(probs == max(probs))][0])
 
     with open('supreme_bach.txt', 'a') as file:
