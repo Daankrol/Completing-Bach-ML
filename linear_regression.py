@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import copy
 import itertools
+import os
 
 from sklearn.utils import _pandas_indexing
 from read_data import add_predicted_value, get_input_output, get_pitch_duration_pairs, get_pitch_features, get_pitch_from_probability, get_voice
@@ -15,7 +16,7 @@ def predict_bach():
     method = 'cumulative'
     prob_method = 'values'
     inputs, outputs, key = get_input_output(
-        voice_number=0, method=method, prob_method=prob_method, window_size=32, use_features=True)
+        voice_number=0, method=method, prob_method=prob_method, window_size=16, use_features=True)
 
     # input_windows = inputs[:2200]
     # teacher_values = outputs[:2200]
@@ -32,8 +33,9 @@ def predict_bach():
         predictions.append(predicted_pitch)
         add_predicted_value(inputs, predicted_pitch,
                             method=method, use_features=True)
-
+    os.remove('supreme_bach.txt')
     with open('supreme_bach.txt', 'a') as file:
+
         for p in predictions:
             file.write(str(p) + '\n')
         file.close()

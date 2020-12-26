@@ -305,23 +305,23 @@ def get_log_pitch(midi_note):
     return log_pitch
 
 
-inputs, output, key = get_input_output(
-    voice_number=3, method='shift',  prob_method='range', window_size=2)
+# inputs, output, key = get_input_output(
+#     voice_number=3, method='shift',  prob_method='range', window_size=2)
 
-print('input:', inputs[-2:])
+# print('input:', inputs[-2:])
 
-prob = np.zeros(len(key))
-prob[0] = 0.5
-# prob[6]=.25
-# prob[7]=.25
-print('inputs[-1]:', inputs[-1])
+# prob = np.zeros(len(key))
+# prob[0] = 0.5
+# # prob[6]=.25
+# # prob[7]=.25
+# print('inputs[-1]:', inputs[-1])
 
-predicted = 66
-predicted = get_pitch_from_probability(prob, key, method='highest')
-print('predicted:', predicted)
+# predicted = 66
+# predicted = get_pitch_from_probability(prob, key, method='highest')
+# print('predicted:', predicted)
 
-add_predicted_value(inputs, predicted, method='shift')
-print('input:', inputs[-2:])
-print('inputs[-1]:', inputs[-1])
+# add_predicted_value(inputs, predicted, method='shift')
+# print('input:', inputs[-2:])
+# print('inputs[-1]:', inputs[-1])
 
 # print('input:', inputs[-3:])
