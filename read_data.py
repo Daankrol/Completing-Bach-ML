@@ -2,6 +2,7 @@ import numpy as np
 import random
 import itertools
 
+
 def get_voice(voice_number):
     """
     Get voice
@@ -40,75 +41,81 @@ def get_input_output(voice_number=0, method='cumulative', prob_method=None, wind
     if method == 'shift':
         # no additional function to spare looping multiple times
         for i in range(len(pairs)):
-            if i+window_size > len(pairs) -1 :  # out of bounds
+            if i+window_size > len(pairs) - 1:  # out of bounds
                 break
             p = pitch_array[i:i+window_size]
             d = duration_array[i:i+window_size]
             o = pitch_array[i+window_size]
-            
+
             empty = []
-            if use_features: pf = [get_pitch_features(x) for x in p]
+            if use_features:
+                pf = [get_pitch_features(x) for x in p]
             for w in range(window_size):
                 empty.append(p[w])
-                if use_features: empty = empty + pf[w]
+                if use_features:
+                    empty = empty + pf[w]
                 empty.append(d[w])
-            
+
             inputs.append(empty)
             output.append(o)
-
 
     elif method == 'cumulative':
         flag = 0
         for i in range(window_size-1, len(pairs)):
-            if duration_array[i] == 1 and flag==0: # TODO: this is not perfect but the problem scenario dow not occur in our data, this is probbibly not the preferred method anyway
-                flag=1
-            else: 
-                flag=1
+            # TODO: this is not perfect but the problem scenario dow not occur in our data, this is probbibly not the preferred method anyway
+            if duration_array[i] == 1 and flag == 0:
+                flag = 1
+            else:
+                flag = 1
                 for j in range(1, duration_array[i]+1):
                     p = pitch_array[i-window_size+1:i+1]
                     d = duration_array[i-window_size+1:i]+[j]
                     o = pitch_array[i]
 
                     empty = []
-                    if use_features: pf = [get_pitch_features(x) for x in p]
+                    if use_features:
+                        pf = [get_pitch_features(x) for x in p]
                     for w in range(window_size):
                         empty.append(p[w])
-                        if use_features: empty = empty + pf[w]
+                        if use_features:
+                            empty = empty + pf[w]
                         empty.append(d[w])
-                    
+
                     inputs.append(empty)
                     output.append(o)
-                    
-            
-    key = [] # later used for making a prediciton from the proability vector
+
+    key = []  # later used for making a prediciton from the probability vector
 
     if prob_method != None:
         output = np.array(output)
-        if prob_method == "range": # use entire range of pitch
-            temp=np.where(output == 0)
+        if prob_method == "range":  # use entire range of pitch
+            temp = np.where(output == 0)
             nonzero_min = min(np.delete(output, temp))
-            output_prob = np.zeros((len(output), ( max(output) - nonzero_min + 1 + 1 ) ), dtype=int) # +1 for inclusion of max and for zero tone
+            # +1 for inclusion of max and for zero tone
+            output_prob = np.zeros(
+                (len(output), (max(output) - nonzero_min + 1 + 1)), dtype=int)
             for i in range(len(output)):
                 if output[i] == 0:
                     output_prob[i][0] = 1
-                else: 
+                else:
                     output_prob[i][output[i]-nonzero_min+1] = 1
 
             key = np.append([0], np.arange(nonzero_min, max(output) + 1, 1))
 
-        elif prob_method == "values": # use only before seen pitch values
+        elif prob_method == "values":  # use only before seen pitch values
             pitch_unique = np.unique(output)
             output_prob = np.zeros((len(output), len(pitch_unique)), dtype=int)
             for i in range(len(output)):
-                output_prob[i][np.where(pitch_unique==output[i])] = 1
+                output_prob[i][np.where(pitch_unique == output[i])] = 1
 
             key = pitch_unique
-        
+
         output = output_prob
 
     # inputs = [pitch_input, duration_input]
 
     return inputs, output, key
+
 
 def get_pitch_from_probability(prob, key, method="highest"):
     """
@@ -117,31 +124,31 @@ def get_pitch_from_probability(prob, key, method="highest"):
     :param output: the original teacher values
     :param select_method "highest", "topN", "weighted", "random"
     """
-    if method[:3] == "top": # equal chance for top n
+    if method[:3] == "top":  # equal chance for top n
         top_n = []
-        if int(method[3:])>len(key):
+        if int(method[3:]) > len(key):
             exit('ERROR: Selecting top n values but n is larger than number of possible outcomes. Select n<=%d' % len(key))
         for i in range(int(method[3:])):
-            idx = random.choice(np.where(prob==max(prob))[0])
+            idx = random.choice(np.where(prob == max(prob))[0])
             # idx = idx if type()
             top_n.append(key[idx])
             prob[idx] = 0
 
         predicted = random.choice(top_n)
 
-    if method == 'weighted': 
+    if method == 'weighted':
         idx = random.choices(range(len(prob)), weights=prob)[0]
-        predicted = key[idx] 
+        predicted = key[idx]
 
     if method == 'highest':
-        idx = np.where(prob==max(prob))
-        predicted = key[idx] 
-        if type(predicted) != int: # in case there are two probabilities with equal value
+        idx = np.where(prob == max(prob))
+        predicted = key[idx]
+        if type(predicted) != int:  # in case there are two probabilities with equal value
             predicted = random.choice(predicted)
-    
+
     if method == 'random':
         predicted = random.choice(key)
-        
+
     return predicted
 
 
@@ -153,21 +160,29 @@ def add_predicted_value_old(inputs, predicted, method='cumulative'):
     :param method: 
     """
     if method == 'shift':
-        inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
-        if predicted == inputs[0][-1][-2]: # predicted is same as previous pitch
+        # shift window and append predicted value
+        inputs[0].append(inputs[0][-1][1:]+[predicted])
+        if predicted == inputs[0][-1][-2]:  # predicted is same as previous pitch
             prev_dur = inputs[1][-1][-1]
-            inputs[1].append(inputs[1][-1][1:]+[prev_dur+1]) # shift window and append duration value that is an increment of the d at t-1
-        else: # predicted not the same as previous pitch
-            inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
+            # shift window and append duration value that is an increment of the d at t-1
+            inputs[1].append(inputs[1][-1][1:]+[prev_dur+1])
+        else:  # predicted not the same as previous pitch
+            # shift window and append duration of 1
+            inputs[1].append(inputs[1][-1][1:]+[1])
 
     if method == 'cumulative':
-        if predicted == inputs[0][-1][-1]: # predicted is same as previous pitch
-            inputs[0].append(inputs[0][-1]) # window shift results in the same pitch input
+        if predicted == inputs[0][-1][-1]:  # predicted is same as previous pitch
+            # window shift results in the same pitch input
+            inputs[0].append(inputs[0][-1])
             prev_dur = inputs[1][-1][-1]
-            inputs[1].append(inputs[1][-1][:-1]+[prev_dur+1]) # window shift results in an increment of the duration value at the d at t-1
-        else: # predicted not the same as previous pitch
-            inputs[0].append(inputs[0][-1][1:]+[predicted]) # shift window and append predicted value
-            inputs[1].append(inputs[1][-1][1:]+[1]) # shift window and append duration of 1
+            # window shift results in an increment of the duration value at the d at t-1
+            inputs[1].append(inputs[1][-1][:-1]+[prev_dur+1])
+        else:  # predicted not the same as previous pitch
+            # shift window and append predicted value
+            inputs[0].append(inputs[0][-1][1:]+[predicted])
+            # shift window and append duration of 1
+            inputs[1].append(inputs[1][-1][1:]+[1])
+
 
 def add_predicted_value(inputs, predicted, method='cumulative', use_features=False):
     """
@@ -177,28 +192,32 @@ def add_predicted_value(inputs, predicted, method='cumulative', use_features=Fal
     :param method: 
     """
     old_input = inputs[-1]
-    old_pitch = inputs[-1][::2] #pitch at even indices
-    old_duration = inputs[-1][1::2] # duration at odd indices
+    old_pitch = inputs[-1][::2]  # pitch at even indices
+    old_duration = inputs[-1][1::2]  # duration at odd indices
 
     print(old_input)
-    print('here:',old_input[2:])
+    print('here:', old_input[2:])
     print(old_pitch)
     print(old_duration)
 
     if method == 'shift':
-        if predicted ==  old_pitch[-1]: # predicted is same as previous pitch
+        if predicted == old_pitch[-1]:  # predicted is same as previous pitch
             new_duration = old_duration[-1] + 1
-            new_window = np.append(old_input[2:], np.append([predicted], [new_duration]))
-            inputs.append(np.append(old_input[2:], np.append([predicted], [new_duration])))
+            new_window = np.append(
+                old_input[2:], np.append([predicted], [new_duration]))
+            inputs.append(
+                np.append(old_input[2:], np.append([predicted], [new_duration])))
         else:
-            inputs.append(np.append(old_input[2:], np.append([predicted], [1])))
+            inputs.append(
+                np.append(old_input[2:], np.append([predicted], [1])))
 
     if method == 'cumulative':
-        if predicted ==  old_pitch[-1]: # predicted is same as previous pitch
+        if predicted == old_pitch[-1]:  # predicted is same as previous pitch
             new_duration = old_duration[-1] + 1
             inputs.append(np.append(old_input[:-1], [new_duration]))
         else:
-            inputs.append(np.append(old_input[2:], np.append([predicted], [1])))
+            inputs.append(
+                np.append(old_input[2:], np.append([predicted], [1])))
 
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
@@ -264,12 +283,14 @@ def get_log_pitch(midi_note):
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch
 
-inputs, output, key = get_input_output(voice_number=3, method='cumulative',  prob_method='range', window_size=3)
+
+inputs, output, key = get_input_output(
+    voice_number=3, method='cumulative',  prob_method='range', window_size=3)
 
 print('input:', inputs[-3:])
 
-prob=np.zeros(len(key))
-prob[0]=0.5
+prob = np.zeros(len(key))
+prob[0] = 0.5
 # prob[6]=.25
 # prob[7]=.25
 print('inputs[-1]:', inputs[-1])
