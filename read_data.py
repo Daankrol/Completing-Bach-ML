@@ -1,5 +1,6 @@
 import numpy as np
 import random
+import itertools
 
 def get_voice(voice_number):
     """
@@ -18,7 +19,7 @@ def get_voice(voice_number):
     return voice
 
 
-def get_input_output(voice_number=0, method='cumulative', prob_method=None, window_size=3):
+def get_input_output(voice_number=0, method='cumulative', prob_method=None, window_size=3, use_features=False):
     """
     :param voice_number: 0 t/m 3
     :param method: 'cumulative' or 'shift'
@@ -45,15 +46,16 @@ def get_input_output(voice_number=0, method='cumulative', prob_method=None, wind
             d = duration_array[i:i+window_size]
             o = pitch_array[i+window_size]
             
-            # pitch_input.append(p)
-            # duration_input.append(d)
-            
-            empty = np.zeros(len(p+d)) # format as [p1,d1,p2,d2,...]
-            empty[::2] = p
-            empty[1::2] = d
+            empty = []
+            if use_features: pf = [get_pitch_features(x) for x in p]
+            for w in range(window_size):
+                empty.append(p[w])
+                if use_features: empty = empty + pf[w]
+                empty.append(d[w])
             
             inputs.append(empty)
             output.append(o)
+
 
     elif method == 'cumulative':
         flag = 0
@@ -67,18 +69,17 @@ def get_input_output(voice_number=0, method='cumulative', prob_method=None, wind
                     d = duration_array[i-window_size+1:i]+[j]
                     o = pitch_array[i]
 
-                    # pitch_input.append(p)
-                    # duration_input.append(d)
+                    empty = []
+                    if use_features: pf = [get_pitch_features(x) for x in p]
+                    for w in range(window_size):
+                        empty.append(p[w])
+                        if use_features: empty = empty + pf[w]
+                        empty.append(d[w])
                     
-                    empty = np.zeros(len(p+d)) # format as [p1,d1,p2,d2,...]
-                    empty[::2] = p
-                    empty[1::2] = d
-            
                     inputs.append(empty)
                     output.append(o)
                     
-                    output.append(o)
-
+            
     key = [] # later used for making a prediciton from the proability vector
 
     if prob_method != None:

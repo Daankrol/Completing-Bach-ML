@@ -15,11 +15,15 @@ def predict_bach():
     method = 'cumulative'
     prob_method = 'values'
     inputs, outputs, key = get_input_output(
-        voice_number=0, method=method, prob_method=prob_method, window_size=3)
+        voice_number=0, method=method, prob_method=prob_method, window_size=4, use_features=True)
     pitches = inputs[0][:2200]
     durations = inputs[1][:2200]
     teacher_values = outputs[:2200]
     pitch_features = []
+    
+    for i in inputs:
+        print(i)
+    exit()
 
     for window in pitches:
         # w_features = []
