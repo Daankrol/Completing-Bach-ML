@@ -190,34 +190,55 @@ def add_predicted_value(inputs, predicted, method='cumulative', use_features=Fal
     :param inputs:
     :param predicted:
     :param method: 
+    :param use_features:
     """
     old_input = inputs[-1]
-    old_pitch = inputs[-1][::2]  # pitch at even indices
-    old_duration = inputs[-1][1::2]  # duration at odd indices
 
-    print(old_input)
-    print('here:', old_input[2:])
-    print(old_pitch)
-    print(old_duration)
+    # print(old_input)
+    # print('here:',old_input[2:])
+    # print(old_pitch)
+    # print(old_duration)
 
-    if method == 'shift':
-        if predicted == old_pitch[-1]:  # predicted is same as previous pitch
-            new_duration = old_duration[-1] + 1
-            new_window = np.append(
-                old_input[2:], np.append([predicted], [new_duration]))
-            inputs.append(
-                np.append(old_input[2:], np.append([predicted], [new_duration])))
-        else:
-            inputs.append(
-                np.append(old_input[2:], np.append([predicted], [1])))
+    if use_features == False:  # only pitch and duration
+        old_pitch = inputs[-1][::2]  # pitch at even indices
+        old_duration = inputs[-1][1::2]  # duration at odd indices
+        if method == 'shift':
+            # predicted is same as previous pitch
+            if predicted == old_pitch[-1]:
+                new_duration = old_duration[-1] + 1
+                inputs.append(
+                    np.append(old_input[2:], np.append([predicted], [new_duration])))
+            else:
+                inputs.append(
+                    np.append(old_input[2:], np.append([predicted], [1])))
 
-    if method == 'cumulative':
-        if predicted == old_pitch[-1]:  # predicted is same as previous pitch
-            new_duration = old_duration[-1] + 1
-            inputs.append(np.append(old_input[:-1], [new_duration]))
-        else:
-            inputs.append(
-                np.append(old_input[2:], np.append([predicted], [1])))
+        if method == 'cumulative':
+            # predicted is same as previous pitch
+            if predicted == old_pitch[-1]:
+                new_duration = old_duration[-1] + 1
+                inputs.append(np.append(old_input[:-1], [new_duration]))
+            else:
+                inputs.append(
+                    np.append(old_input[2:], np.append([predicted], [1])))
+    else:  # extensive features
+        old_pitch = inputs[-1][::7]
+        old_duration = inputs[-1][6::7]  # duration at odd indices
+        pf = get_pitch_features(predicted)  # pitch feature array
+        if method == 'shift':
+            # predicted is same as previous pitch
+            if predicted == old_pitch[-1]:
+                new_duration = old_duration[-1] + 1
+                inputs.append(old_input[7:] +
+                              [predicted] + pf + [new_duration])
+            else:
+                inputs.append(old_input[7:] + [predicted] + pf + [1])
+        if method == 'cumulative':
+            # predicted is same as previous pitch
+            if predicted == old_pitch[-1]:
+                new_duration = old_duration[-1] + 1
+                inputs.append(old_input[:-1] + [new_duration])
+            else:
+                inputs.append(old_input[7:] + [predicted] + pf + [1])
 
 
 def get_pitch_duration_pairs(voice_number=0, method='cumulative'):
@@ -285,9 +306,9 @@ def get_log_pitch(midi_note):
 
 
 inputs, output, key = get_input_output(
-    voice_number=3, method='cumulative',  prob_method='range', window_size=3)
+    voice_number=3, method='shift',  prob_method='range', window_size=2)
 
-print('input:', inputs[-3:])
+print('input:', inputs[-2:])
 
 prob = np.zeros(len(key))
 prob[0] = 0.5
@@ -296,10 +317,11 @@ prob[0] = 0.5
 print('inputs[-1]:', inputs[-1])
 
 predicted = 66
-# predicted = get_pitch_from_probability(prob, key, method='highest')
+predicted = get_pitch_from_probability(prob, key, method='highest')
 print('predicted:', predicted)
 
-add_predicted_value(inputs, predicted, method='cumulative')
+add_predicted_value(inputs, predicted, method='shift')
+print('input:', inputs[-2:])
 print('inputs[-1]:', inputs[-1])
 
 # print('input:', inputs[-3:])
