@@ -1,5 +1,5 @@
 import tensorflow as tf
-
+from read_data import get_input_output
 
 # A layers.Dense with no activation set is a linear model.
 # The layer only transforms the last axis of the data from
@@ -14,20 +14,22 @@ linear = tf.keras.Sequential([
 MAX_EPOCHS = 20
 
 
-def compile_and_fit(model, window, patience=2):
+def compile_and_fit(model, window_train, window_val, patience=2):
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
                                                       patience=patience,
                                                       mode='min')
     model.compile(loss=tf.losses.MeanSquaredError(),
                   optimizer=tf.optimizers.Adam(),
                   metrics=[tf.metrics.MeanAbsoluteError()])
-    history = model.fit(window.train, epochs=MAX_EPOCHS,
-                        validation_data=window.val,
+    history = model.fit(window_train, epochs=MAX_EPOCHS,
+                        validation_data=window_val,
                         callbacks=[early_stopping])
     return history
 
 
-history = compile_and_fit(linear, )
+inputs, outputs, key = get_input_output(
+    voice_number=0, method='cumulative', prob_method='values', window_size=16, use_features=True)
 
-singlestepwindow.train
-singlestepwindow.test
+history = compile_and_fit(linear, inputs, outputs)
+
+print(history)
