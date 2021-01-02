@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import itertools
+from methods import *
 
 
 def get_voice(voice_number):
