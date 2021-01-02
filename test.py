@@ -5,8 +5,6 @@ from window_generator import WindowGenerator
 # TODO label_columns does not exist yet
 w2 = WindowGenerator(input_width=6, label_width=1, shift=1)
 print(w2)
-x = w2.make_dataset(w2.train_df)
-print('x:', x)
 
 example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
                            np.array(w2.train_df[100:100+w2.total_window_size]),
