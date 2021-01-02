@@ -1,6 +1,7 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import KFold
+from methods import *
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import copy
@@ -13,8 +14,8 @@ mpl.use('TkAgg')
 
 
 def predict_bach():
-    method = 'cumulative'
-    prob_method = 'values'
+    method = WindowMethod.CUMULATIVE
+    prob_method = ProbabilityMethods.VALUES
     inputs, outputs, key = get_input_output(
         voice_number=0, method=method, prob_method=prob_method, window_size=16, use_features=True)
 
@@ -29,7 +30,7 @@ def predict_bach():
     for x in range(1000):
         probs = model.predict([inputs[-1]])[0]
         predicted_pitch = get_pitch_from_probability(
-            probs, key, method="weighted")
+            probs, key, method=SelectionMethod.WEIGHTED)
         predictions.append(predicted_pitch)
         add_predicted_value(inputs, predicted_pitch,
                             method=method, use_features=True)

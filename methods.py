@@ -13,4 +13,5 @@ class SelectionMethod(Enum):
     WEIGHTED = 2
     HIGHEST = 3
     RANDOM = 4
-    
+    PROB = 5
+

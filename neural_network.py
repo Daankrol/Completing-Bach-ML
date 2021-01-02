@@ -1,5 +1,6 @@
 import tensorflow as tf
 from read_data import get_input_output
+from methods import *
 
 # A layers.Dense with no activation set is a linear model.
 # The layer only transforms the last axis of the data from
@@ -28,7 +29,7 @@ def compile_and_fit(model, window_train, window_val, patience=2):
 
 
 inputs, outputs, key = get_input_output(
-    voice_number=0, method='cumulative', prob_method='values', window_size=16, use_features=True)
+    voice_number=0, method=WindowMethod.CUMULATIVE, prob_method=ProbabilityMethods.VALUES, window_size=16, use_features=True)
 
 history = compile_and_fit(linear, inputs, outputs)
 
