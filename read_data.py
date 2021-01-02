@@ -137,6 +137,26 @@ def get_pitch_from_probability(prob, key, method="highest"):
 
         predicted = random.choice(top_n)
 
+    if method[:4] == "prob":  # weighted chance for top n
+        top_n = []
+        top_prob = []
+        if int(method[4:]) > len(key):
+            exit('ERROR: Selecting top n values but n is larger than number of possible outcomes. Select n<=%d' % len(key))
+        for i in range(int(method[4:])):
+            idx = random.choice(np.where(prob == max(prob))[0])
+            # idx = idx if type()
+            top_n.append(key[idx])
+            top_prob.append(max(prob))
+            prob[idx] = 0
+
+        print("top:", top_n)
+        print('top prob:', top_prob)
+
+        idx = random.choices(range(len(top_prob)), weights=top_prob)[0]
+        predicted = top_n[idx]
+
+        print(predicted)
+
     if method == 'weighted':
         idx = random.choices(range(len(prob)), weights=prob)[0]
         predicted = key[idx]
