@@ -118,18 +118,18 @@ def get_input_output(voice_number=0, method=WindowMethod.CUMULATIVE, prob_method
     return inputs, output, key
 
 
-def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, ):
+def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, topN=3):
     """
     Select a pitch value given a probability vector
     :param prob: the key given during i/o creation
     :param output: the original teacher values
-    :param select_method "highest", "topN", "weighted", "random"
+    :param select_method "highest", "topN", "weighted", "random", "probN"
     """
     if method == SelectionMethod.TOP:  # equal chance for top n
         top_n = []
-        if int(method[3:]) > len(key):
+        if topN > len(key):
             exit('ERROR: Selecting top n values but n is larger than number of possible outcomes. Select n<=%d' % len(key))
-        for i in range(int(method[3:])):
+        for i in range(topN):
             idx = random.choice(np.where(prob == max(prob))[0])
             # idx = idx if type()
             top_n.append(key[idx])
@@ -137,12 +137,12 @@ def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, ):
 
         predicted = random.choice(top_n)
 
-    if method[:4] == SelectionMethod.PROB:  # weighted chance for top n
+    if method == SelectionMethod.PROB:  # weighted chance for top n
         top_n = []
         top_prob = []
-        if int(method[4:]) > len(key):
+        if topN > len(key):
             exit('ERROR: Selecting top n values but n is larger than number of possible outcomes. Select n<=%d' % len(key))
-        for i in range(int(method[4:])):
+        for i in range(topN):
             idx = random.choice(np.where(prob == max(prob))[0])
             # idx = idx if type()
             top_n.append(key[idx])

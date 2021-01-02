@@ -45,7 +45,7 @@ def predict_bach():
     voice = get_voice(0)
     plt.plot(voice, 'b-')
     plt.plot(range(len(voice), len(voice)+len(predictions)), predictions, 'r--')
-    plt.savefig('mulivariate_linear_regression_' + method + '.png')
+    plt.savefig('mulivariate_linear_regression_' + str(method).split('.')[1] + '.png')
     plt.show()
 
 
