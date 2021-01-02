@@ -19,9 +19,11 @@ def compile_and_fit(model, window_train, window_val, patience=2):
     early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
                                                       patience=patience,
                                                       mode='min')
+
     model.compile(loss=tf.losses.MeanSquaredError(),
                   optimizer=tf.optimizers.Adam(),
                   metrics=[tf.metrics.MeanAbsoluteError()])
+
     history = model.fit(window_train, epochs=MAX_EPOCHS,
                         validation_data=window_val,
                         callbacks=[early_stopping])
@@ -29,7 +31,7 @@ def compile_and_fit(model, window_train, window_val, patience=2):
 
 
 inputs, outputs, key = get_input_output(
-    voice_number=0, method=WindowMethod.CUMULATIVE, prob_method=ProbabilityMethods.VALUES, window_size=16, use_features=True)
+    voice_number=0, method=WindowMethod.SHIFT, prob_method=ProbabilityMethods.VALUES, window_size=16, use_features=True)
 
 history = compile_and_fit(linear, inputs, outputs)
 

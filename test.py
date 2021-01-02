@@ -1,19 +1,24 @@
-# from read_data import *
-
-# print(get_pairs(voice_number=1, method='cumulative'))
-from sklearn.linear_model import LinearRegression
+import tensorflow as tf
 import numpy as np
-model = LinearRegression()
+from window_generator import WindowGenerator
 
-x = [[1, 1], [1, 2], [4, 4], [3, 4]]
-x_p1 = [1, 1, 4, 3]
-x_d1 = [1, 2, 4, 4]
+# TODO label_columns does not exist yet
+w2 = WindowGenerator(input_width=6, label_width=1, shift=1)
+print(w2)
 
-y_1 = [0, 0, 0, 1]
-x = [x1p, x2p, ..., x1d, x2d[x_p1 + x_d1], x2, x3]
-y = [y1, y2, [1, 0], [1, 0], [0, 1], [0, 1]]
+example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
+                           np.array(w2.train_df[100:100+w2.total_window_size]),
+                           np.array(w2.train_df[200:200+w2.total_window_size])])
 
+example_inputs, example_labels = w2.split_window(example_window)
 
-model.fit([np.array(x_p), np.array(x_d)], np.array(y))
+print(example_labels)
 
-print(model.predict([[4, 4]]))
+print(example_inputs)
+
+print('All shapes are: (batch, time, features)')
+print(f'Window shape: {example_window.shape}')
+print(f'Inputs shape: {example_inputs.shape}')
+print(f'labels shape: {example_labels.shape}')
+
+# w2.make_dataset()

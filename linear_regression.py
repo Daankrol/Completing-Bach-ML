@@ -16,8 +16,9 @@ mpl.use('TkAgg')
 def predict_bach():
     method = WindowMethod.CUMULATIVE
     prob_method = ProbabilityMethods.VALUES
+    selection_method = SelectionMethod.PROB
     inputs, outputs, key = get_input_output(
-        voice_number=0, method=method, prob_method=prob_method, window_size=16, use_features=True)
+        voice_number=0, method=method, prob_method=prob_method, window_size=4, use_features=True)
 
     # input_windows = inputs[:2200]
     # teacher_values = outputs[:2200]
@@ -30,7 +31,7 @@ def predict_bach():
     for x in range(1000):
         probs = model.predict([inputs[-1]])[0]
         predicted_pitch = get_pitch_from_probability(
-            probs, key, method=SelectionMethod.WEIGHTED)
+            probs, key, method=selection_method)
         predictions.append(predicted_pitch)
         add_predicted_value(inputs, predicted_pitch,
                             method=method, use_features=True)
