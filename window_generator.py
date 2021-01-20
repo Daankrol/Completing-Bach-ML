@@ -1,14 +1,19 @@
+
 import tensorflow as tf
-import numpy as np
-from data_frame import generate_dataframe
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from data_frame import generate_dataframe
+import numpy as np
+import read_data
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 
 class WindowGenerator():
     def __init__(self, input_width, label_width, shift,
                  label_columns=None):
-
+        # load all input and teacher values
         df = generate_dataframe()
 
         n = len(df)
@@ -28,7 +33,7 @@ class WindowGenerator():
 
         # make_plot(train_std, df.iloc[:, :5], train_mean)
 
-        # # Store the raw data.
+        # Store the raw data.
         # self.train_df = train_df
         # self.val_df = val_df
         # self.test_df = test_df
@@ -66,7 +71,7 @@ class WindowGenerator():
         self.labels_slice = slice(self.label_start, None)
         self.label_indices = np.arange(self.total_window_size)[
             self.labels_slice]
-    
+
     @property
     def train(self):
         return self.make_dataset(self.train_df)
@@ -89,31 +94,32 @@ class WindowGenerator():
             # And cache it for next time
             self._example = result
         return result
-    
+
     def __repr__(self):
         return '\n'.join([
             f'Total window size: {self.total_window_size}',
             f'Input indices: {self.input_indices}',
             f'Label indices: {self.label_indices}',
+            f'Input column names(s): {self.input_columns}',
             f'Label column name(s): {self.label_columns}'])
 
     def split_window(self, features):
         inputs = features[:, self.input_slice, :]
         labels = features[:, self.labels_slice, :]
+
+        # label columns is a one-hot encoding vector
         if self.label_columns is not None:
             labels = tf.stack(
                 [labels[:, :, self.column_indices[name]]
                     for name in self.label_columns],
                 axis=-1)
+
+        # all features as input
         if self.input_columns is not None:
             inputs = tf.stack(
                 [inputs[:, :, self.column_indices[name]]
                     for name in self.input_columns],
                 axis=-1)
-            # inputs = tf.stack(
-            #     [inputs[:, :, self.column_indices[name]]
-            #         for name in self.label_columns],
-            #     axis=-1)
 
         # Slicing doesn't preserve static shape information, so set the shapes
         # manually. This way the `tf.data.Datasets` are easier to inspect.
@@ -123,7 +129,9 @@ class WindowGenerator():
         return inputs, labels
 
     def make_dataset(self, data):
+
         data = np.array(data, dtype=np.float32)
+
         ds = tf.keras.preprocessing.timeseries_dataset_from_array(
             data=data,
             targets=None,
@@ -136,6 +144,9 @@ class WindowGenerator():
 
         return ds
 
+###############################################################################################################
+###############################################################################################################
+
 
 def make_plot(train_std, df, train_mean):
     df_std = (df - train_mean) / train_std
@@ -145,3 +156,55 @@ def make_plot(train_std, df, train_mean):
     _ = ax.set_xticklabels(df.keys(), rotation=90)
     fig = ax.get_figure()
     fig.savefig("normalized_violin_features.png")
+
+
+single_step_window = WindowGenerator(input_width=1, label_width=1, shift=1)
+multi_step_window = WindowGenerator(input_width=6, label_width=1, shift=1)
+
+for example_inputs, example_labels in single_step_window.train.take(1):
+    print(f'Inputs shape (batch, time, features): {example_inputs.shape}')
+    print(f'Labels shape (batch, time, features): {example_labels.shape}')
+
+# test = single_step_window.train
+print(single_step_window.train)
+
+linear = tf.keras.Sequential(
+    [tf.keras.layers.Dense(22, activation="softmax")])
+print('Input shape:', multi_step_window.example[0].shape)
+print('Output shape:', linear(multi_step_window.example[0]).shape)
+
+
+MAX_EPOCHS = 20
+
+
+def compile_and_fit(model, window, patience=2):
+    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+                                                      patience=patience,
+                                                      mode='min')
+
+    model.compile(loss=tf.losses.MeanSquaredError(),
+                  optimizer=tf.optimizers.Adam(),
+                  metrics=[tf.metrics.MeanAbsoluteError()])
+
+    history = model.fit(window.train, epochs=MAX_EPOCHS,
+                        validation_data=window.val,
+                        callbacks=[early_stopping])
+    return history
+
+
+history = compile_and_fit(linear, single_step_window)
+batch = single_step_window.test.take(1)
+print(batch, type(batch), np.shape(batch))
+
+prediction = linear.predict(batch)
+print(prediction, prediction.shape, type(prediction))
+
+
+# prediction = tf.reshape(prediction, [-1])  # flatten the prediction
+# print(prediction.shape, type(prediction))
+# print(prediction)
+# print(f'Max value: {max(prediction)}')
+# val_performance = {}
+# performance = {}
+# val_performance['Linear'] = linear.evaluate(single_step_window.val)
+# performance['Linear'] = linear.evaluate(single_step_window.test, verbose=0)

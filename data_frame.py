@@ -3,7 +3,7 @@ import numpy as np
 from read_data import get_input_output
 from methods import WindowMethod, ProbabilityMethods
 import matplotlib.pyplot as plt
-import png
+
 
 def generate_dataframe():
     use_features = True
@@ -27,11 +27,24 @@ def generate_dataframe():
         df['log_pitch'], df['chroma_x'], df['chroma_y'], df['c5_x'], df['c5_y'] = features
     else:
         df['pitch'] = pitch
+
+    # df['one_hot'] = outputs.tolist()
     # Add one-hot encoding as boolean representations
     for idx, pitch in enumerate(pitch_key):
         df['prob_%d' % pitch] = outputs[:, idx]
 
     return df
+
+
+def generate_data():
+    use_features = True
+    inputs, outputs, pitch_key = get_input_output(
+        voice_number=0, method=WindowMethod.SHIFT, prob_method=ProbabilityMethods.VALUES, window_size=1, use_features=use_features)
+
+    inputs = np.array(inputs[1:])
+    outputs = np.array(outputs[:-1])
+
+    return inputs, outputs
 
 
 def print_features(df):
@@ -45,5 +58,7 @@ def print_features(df):
     pass
 
 
-df = generate_dataframe()
-print_features(df)
+# df = generate_dataframe()
+# print(df)
+
+# print(df.iloc[0, 6])
