@@ -1,6 +1,8 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import KFold
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import Pipeline
 from methods import *
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -23,17 +25,25 @@ def predict_bach():
     # input_windows = inputs[:2200]
     # teacher_values = outputs[:2200]
 
+    polynomial_features = PolynomialFeatures(degree = 2)
+    inputs_TRANSF = polynomial_features.fit_transform(inputs)
+
     model = LinearRegression()
-    model.fit(inputs, outputs)
+    model.fit(inputs_TRANSF, outputs)
 
     # for x in range(2200, 2400):
     predictions = []
     for x in range(1000):
-        probs = model.predict([inputs[-1]])[0]
-        print("sum probs", sum(probs))
+
+        latest_input = [inputs[-1]]
+        latest_input_TRANSF = polynomial_features.fit_transform(latest_input)
+
+        probs = model.predict(latest_input_TRANSF)[0]
+
         predicted_pitch = get_pitch_from_probability(
             probs, key, method=selection_method)
         predictions.append(predicted_pitch)
+
         add_predicted_value(inputs, predicted_pitch,
                             method=method, use_features=True)
     os.remove('supreme_bach.txt')
@@ -47,7 +57,7 @@ def predict_bach():
     voice = get_voice(0)
     plt.plot(voice, 'b-')
     plt.plot(range(len(voice), len(voice)+len(predictions)), predictions, 'r--')
-    plt.savefig('mulivariate_linear_regression_' + str(method).split('.')[1] + '.png')
+    plt.savefig('mulivariate_polynomial_regression_' + str(method).split('.')[1] + '.png')
     plt.show()
 
 
