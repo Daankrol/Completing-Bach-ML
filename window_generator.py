@@ -1,4 +1,3 @@
-
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -14,22 +13,23 @@ class WindowGenerator():
     def __init__(self, input_width, label_width, shift,
                  label_columns=None):
         # load all input and teacher values
-        df = generate_dataframe()
+        self.df, self.pitch_conversion_key = generate_dataframe()
+        
 
-        n = len(df)
-        self.train_df = df[0:int(n*0.7)]  # train split 70% of data
-        self.val_df = df[int(n*0.7):int(n*0.9)]  # validation split 20% of data
-        self.test_df = df[int(n*0.9):]  # test split 10% of data
+        n = len(self.df)
+        self.train_df = self.df[0:int(n*0.7)]  # train split 70% of data
+        self.val_df = self.df[int(n*0.7):int(n*0.9)]  # validation split 20% of data
+        self.test_df = self.df[int(n*0.9):]  # test split 10% of data
 
         # Normalize the data
-        train_mean = self.train_df.iloc[:, :6].mean()
-        train_std = self.train_df.iloc[:, :6].std()
+        self.train_mean = self.train_df.iloc[:, :6].mean()
+        self.train_std = self.train_df.iloc[:, :6].std()
         self.train_df.iloc[:, :6] = (
-            self.train_df.iloc[:, :6] - train_mean) / train_std
+            self.train_df.iloc[:, :6] - self.train_mean) / self.train_std
         self.val_df.iloc[:, :6] = (
-            self.val_df.iloc[:, :6] - train_mean) / train_std
+            self.val_df.iloc[:, :6] - self.train_mean) / self.train_std
         self.test_df.iloc[:, :6] = (
-            self.test_df.iloc[:, :6] - train_mean) / train_std
+            self.test_df.iloc[:, :6] - self.train_mean) / self.train_std
 
         # make_plot(train_std, df.iloc[:, :5], train_mean)
 
@@ -38,7 +38,7 @@ class WindowGenerator():
         # self.val_df = val_df
         # self.test_df = test_df
 
-        labels_all = list(df.columns)
+        labels_all = list(self.df.columns)
         self.label_columns = labels_all[6:]
         self.input_columns = labels_all[:6]
 
@@ -71,7 +71,10 @@ class WindowGenerator():
         self.labels_slice = slice(self.label_start, None)
         self.label_indices = np.arange(self.total_window_size)[
             self.labels_slice]
-
+    
+    def normalise_features(features):
+        pass
+    
     @property
     def train(self):
         return self.make_dataset(self.train_df)
@@ -83,6 +86,10 @@ class WindowGenerator():
     @property
     def test(self):
         return self.make_dataset(self.test_df)
+
+    @property
+    def test_no_shuffle(self):
+        return self.make_dataset(self.test_df, shuffle=False).unbatch()
 
     @property
     def example(self):
@@ -128,7 +135,7 @@ class WindowGenerator():
 
         return inputs, labels
 
-    def make_dataset(self, data):
+    def make_dataset(self, data, shuffle=True):
 
         data = np.array(data, dtype=np.float32)
 
@@ -137,7 +144,7 @@ class WindowGenerator():
             targets=None,
             sequence_length=self.total_window_size,
             sequence_stride=1,
-            shuffle=True,
+            shuffle=shuffle,
             batch_size=32,)
 
         ds = ds.map(self.split_window)
@@ -146,6 +153,15 @@ class WindowGenerator():
 
 ###############################################################################################################
 ###############################################################################################################
+
+
+def plot_linear_model_weights(linear_model, window_generator):
+    plt.bar(x=range(len(window_generator.train_df.columns)),
+            height=linear_model.layers[0].kernel[:, 0].numpy())
+    axis = plt.gca()
+    axis.set_xticks(range(len(window_generator.train_df.columns)))
+    _ = axis.set_xticklabels(window_generator.train_df.columns, rotation=90)
+    plt.show()
 
 
 def make_plot(train_std, df, train_mean):
@@ -158,52 +174,13 @@ def make_plot(train_std, df, train_mean):
     fig.savefig("normalized_violin_features.png")
 
 
-single_step_window = WindowGenerator(input_width=1, label_width=1, shift=1)
-multi_step_window = WindowGenerator(input_width=6, label_width=1, shift=1)
+# batch = multiSte.test.take(1)
+# print(batch, type(batch), np.shape(batch))
 
-for example_inputs, example_labels in single_step_window.train.take(1):
-    print(f'Inputs shape (batch, time, features): {example_inputs.shape}')
-    print(f'Labels shape (batch, time, features): {example_labels.shape}')
-
-# test = single_step_window.train
-print(single_step_window.train)
-
-linear = tf.keras.Sequential(
-    [tf.keras.layers.Dense(22, activation="softmax")])
-print('Input shape:', multi_step_window.example[0].shape)
-print('Output shape:', linear(multi_step_window.example[0]).shape)
+# prediction = linear.predict(batch)
+# print(prediction, prediction.shape, type(prediction))
 
 
-MAX_EPOCHS = 20
-
-
-def compile_and_fit(model, window, patience=2):
-    early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
-                                                      patience=patience,
-                                                      mode='min')
-
-    model.compile(loss=tf.losses.MeanSquaredError(),
-                  optimizer=tf.optimizers.Adam(),
-                  metrics=[tf.metrics.MeanAbsoluteError()])
-
-    history = model.fit(window.train, epochs=MAX_EPOCHS,
-                        validation_data=window.val,
-                        callbacks=[early_stopping])
-    return history
-
-
-history = compile_and_fit(linear, single_step_window)
-batch = single_step_window.test.take(1)
-print(batch, type(batch), np.shape(batch))
-
-prediction = linear.predict(batch)
-print(prediction, prediction.shape, type(prediction))
-
-
-# prediction = tf.reshape(prediction, [-1])  # flatten the prediction
-# print(prediction.shape, type(prediction))
-# print(prediction)
-# print(f'Max value: {max(prediction)}')
 # val_performance = {}
 # performance = {}
 # val_performance['Linear'] = linear.evaluate(single_step_window.val)

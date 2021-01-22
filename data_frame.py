@@ -20,7 +20,7 @@ def generate_dataframe():
     # Create the DF
     d = {'dur': duration}
     df = pd.DataFrame(data=d, dtype=float)
-
+    
     # Add features
     if use_features:
         features = np.transpose(features)
@@ -33,7 +33,7 @@ def generate_dataframe():
     for idx, pitch in enumerate(pitch_key):
         df['prob_%d' % pitch] = outputs[:, idx]
 
-    return df
+    return df, pitch_key
 
 
 def generate_data():
@@ -48,17 +48,8 @@ def generate_data():
 
 
 def print_features(df):
-
     plot_cols = ['log_pitch', 'chroma_x', 'chroma_y', 'c5_x', 'c5_y']
     plot_features = df[plot_cols]
     fig = plot_features.plot(subplots=True)
     fig = fig[0].get_figure()
     fig.savefig('f.png')
-
-    pass
-
-
-# df = generate_dataframe()
-# print(df)
-
-# print(df.iloc[0, 6])
