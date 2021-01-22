@@ -118,7 +118,7 @@ def get_input_output(voice_number=0, method=WindowMethod.CUMULATIVE, prob_method
     return inputs, output, key
 
 
-def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=8):
+def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=3):
     """
     Select a pitch value given a probability vector
     :param prob: the key given during i/o creation
@@ -149,13 +149,13 @@ def get_pitch_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=8):
             top_prob.append(max(prob))
             prob[idx] = 0
 
-        print("top:", top_n)
-        print('top prob:', top_prob)
+        # print("top:", top_n)
+        # print('top prob:', top_prob)
 
         idx = random.choices(range(len(top_prob)), weights=top_prob)[0]
         predicted = top_n[idx]
 
-        print(predicted)
+        # print(predicted)
 
     if method == SelectionMethod.WEIGHTED:
         idx = random.choices(range(len(prob)), weights=prob)[0]
