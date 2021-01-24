@@ -21,7 +21,7 @@ def get_voice(voice_number):
     return voice
 
 
-def get_input_output(voice_number=0, method=WindowMethod.CUMULATIVE, prob_method=None, window_size=16, use_features=False):
+def get_input_output(voice_number, method=WindowMethod.CUMULATIVE, prob_method=None, window_size=16, use_features=False):
     """
     :param voice_number: 0 t/m 3
     :param method: 'cumulative' or 'shift'
@@ -262,7 +262,7 @@ def add_predicted_value(inputs, predicted, method=WindowMethod.CUMULATIVE, use_f
                 inputs.append(old_input[7:] + [predicted] + pf + [1])
 
 
-def get_pitch_duration_pairs(voice_number=0, method=WindowMethod.CUMULATIVE):
+def get_pitch_duration_pairs(voice_number, method=WindowMethod.CUMULATIVE):
     """
     Translate to additive pitch duration pairs
     :param method: 'cumulative' or 'shift'
@@ -319,7 +319,7 @@ def get_log_pitch(midi_note):
     n = midi_note - 69  # 69 is the midi of A over middle C
     fx = pow(2, (n / 12)) * 440  # 220 is the frequency of A over middle C
     min_note = 0  # FIXME fixed for voice 0
-    max_note = 76  # FIXME fixed for voice 0
+    max_note = 62  # FIXME should be dynamic. v0=76, v1=.., v2=62, v3=...
     min_p = 2 * np.log2(pow(2, ((min_note - 69) / 12)) * 440)
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
