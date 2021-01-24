@@ -1,6 +1,7 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import KFold
+from sklearn.linear_model import LinearRegression, Ridge, RidgeCV
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures 
+from sklearn.model_selection import KFold, cross_val_score
 from methods import *
 import matplotlib.pyplot as plt
 import matplotlib as mpl
@@ -12,25 +13,98 @@ from sklearn.utils import _pandas_indexing
 from read_data import add_predicted_value, get_input_output, get_pitch_duration_pairs, get_pitch_features, get_pitch_from_probability, get_voice
 mpl.use('TkAgg')
 
+def get_standardized_input(inputs, window_size, n_features):
 
-def predict_bach():
+    inputs_array = np.array(inputs)
+    inputs_reshaped = np.reshape(inputs_array, (len(inputs_array)*window_size, n_features))
+    
+    scaler = StandardScaler().fit(inputs_reshaped)
+
+    inputs_standard = scaler.transform(inputs_reshaped)
+    inputs_standard = np.reshape(inputs_standard, (inputs_array.shape))
+
+    return scaler, inputs_standard
+
+def standardize_input(latest_input, window_size, scaler,n_features):
+
+    latest_input_array = np.array(latest_input)
+    latest_input_reshaped = np.reshape(latest_input_array, (window_size, n_features))
+
+    latest_input_standard = scaler.transform(latest_input_reshaped)
+    latest_input_standard = np.reshape(latest_input_standard, (latest_input_array.shape))
+    
+    return latest_input_standard
+
+def plot_cv_models():
     method = WindowMethod.CUMULATIVE
     prob_method = ProbabilityMethods.VALUES
     selection_method = SelectionMethod.PROB
+    window_size= 5
     inputs, outputs, key = get_input_output(
-        voice_number=0, method=method, prob_method=prob_method, window_size=4, use_features=True)
+        voice_number=0, method=method, prob_method=prob_method, window_size=window_size, use_features=True)
 
-    # input_windows = inputs[:2200]
-    # teacher_values = outputs[:2200]
+    for inp in inputs: # use only the log pitch value
+        del inp[0::7] 
 
-    model = LinearRegression()
-    model.fit(inputs, outputs)
+    n_features = int(len(inputs[0])/window_size)
+    scaler, inputs_standard = get_standardized_input(inputs, window_size, n_features)
+    
+    alphas = np.arange(0,500,50)
+    plt.figure()
 
-    # for x in range(2200, 2400):
+    scores = [cross_val_score(Ridge(alpha), inputs_standard, outputs, cv=22, scoring="neg_mean_squared_error").mean() for alpha in alphas]    
+    plt.plot(alphas, scores, label="Ridge")
+  
+    plt.legend(loc='lower right')
+    plt.xlabel('alpha')
+    plt.ylabel('cross validation score')
+    plt.tight_layout()
+    plt.show()
+
+# plot_cv_models()  
+
+def predict_bach(regression_method="linear"):
+    method = WindowMethod.CUMULATIVE
+    prob_method = ProbabilityMethods.VALUES
+    selection_method = SelectionMethod.PROB
+    window_size=5
+    inputs, outputs, key = get_input_output(
+        voice_number=0, method=method, prob_method=prob_method, window_size=window_size, use_features=True)
+
+    for inp in inputs: # use only the log pitch value
+        del inp[0::7] 
+
+    n_features = int(len(inputs[0])/window_size)
+    scaler, inputs_standard = get_standardized_input(inputs, window_size, n_features)
+
+    print("shape:", inputs_standard.shape)
+
+    if regression_method == "linear":
+        model = RidgeCV(alphas= np.arange(10,500,50))
+        # model = Ridge(alpha=1)
+        
+        model.fit(inputs_standard, outputs)
+        print("alpha is", model.alpha_)
+
+    elif regression_method=="polynomial":
+        polynomial_features = PolynomialFeatures(degree = 2)
+        inputs_TRANSF = polynomial_features.fit_transform(inputs_standard)
+
+        model = Ridge(alpha=2)
+        model.fit(inputs_TRANSF, outputs)
+        
     predictions = []
     for x in range(1000):
-        probs = model.predict([inputs[-1]])[0]
-        print("sum probs", sum(probs))
+        latest_input = inputs[-1]
+        # print("before stand:", np.array(inputs).shape)
+        latest_input = standardize_input(latest_input, window_size, scaler, n_features)
+        # print("after stand", np.array(inputs).shape)
+        if regression_method == "linear":
+            probs = model.predict([latest_input])[0]
+        elif regression_method=="polynomial":
+            latest_input_TRANSF = polynomial_features.fit_transform([latest_input])
+            probs = model.predict(latest_input_TRANSF)[0]
+
         predicted_pitch = get_pitch_from_probability(
             probs, key, method=selection_method)
         predictions.append(predicted_pitch)
@@ -51,7 +125,7 @@ def predict_bach():
     plt.show()
 
 
-predict_bach()
+predict_bach(regression_method="polynomial")
 
 
 def construct_windows(pd_pairs, window_size):
