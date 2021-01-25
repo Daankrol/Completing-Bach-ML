@@ -11,11 +11,10 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 class WindowGenerator():
     def __init__(self, input_width, label_width, shift, voice_number, batch_size=32,
-                 label_columns=None):
+                 label_columns=None, use_features=True):
         self.batch_size = batch_size
         # load all input and teacher values
-        self.df, self.pitch_conversion_key = generate_dataframe(voice_number=voice_number)
-        
+        self.df, self.pitch_conversion_key = generate_dataframe(voice_number=voice_number, use_features=use_features)
         # Normalise features
         self.mean_df = self.df.iloc[:, :6].mean()
         self.std_df = self.df.iloc[:, :6].std()

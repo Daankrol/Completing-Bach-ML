@@ -5,10 +5,9 @@ from methods import WindowMethod, ProbabilityMethods
 import matplotlib.pyplot as plt
 
 
-def generate_dataframe(voice_number):
-    use_features = True
+def generate_dataframe(voice_number, use_features=True):
     inputs, outputs, pitch_key = get_input_output(
-        voice_number=voice_number, method=WindowMethod.SHIFT, prob_method=ProbabilityMethods.VALUES, window_size=1, use_features=use_features)
+        voice_number=voice_number,prob_method=ProbabilityMethods.VALUES, window_size=1, use_features=use_features)
     inputs = np.array(inputs[1:])
     outputs = np.array(outputs[:-1])
 
@@ -36,8 +35,7 @@ def generate_dataframe(voice_number):
     return df, pitch_key
 
 
-def generate_data(voice_number):
-    use_features = True
+def generate_data(voice_number, use_features=True):
     inputs, outputs, pitch_key = get_input_output(
         voice_number=voice_number, method=WindowMethod.SHIFT, prob_method=ProbabilityMethods.VALUES, window_size=1, use_features=use_features)
 
