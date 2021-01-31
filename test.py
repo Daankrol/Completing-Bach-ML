@@ -23,26 +23,75 @@ import numpy as np
 
 # # w2.make_dataset()
 
-inputs = np.array([[1, 2, 3], [4, 5, 6]])
-outputs = np.array([[1, 0, 0], [0, 0, 1]])
+# inputs = np.array([[1, 2, 3], [4, 5, 6]])
+# outputs = np.array([[1, 0, 0], [0, 0, 1]])
 
 
-inputs = [[1, 2, 3], [4, 5, 6]]
-outputs = [[1, 0, 0], [0, 0, 1]]
+# inputs = [[1, 2, 3], [4, 5, 6]]
+# outputs = [[1, 0, 0], [0, 0, 1]]
 
-together = inputs[0] + [outputs[0]]
-print(together)
+# together = inputs[0] + [outputs[0]]
+# print(together)
 
-np_t = np.array(together, dtype='object')
-print(np_t)
+# np_t = np.array(together, dtype='object')
+# print(np_t)
 
-ni = np.array([1, 2, 3])
-no = np.array([0, 0, 0, 1])
+# ni = np.array([1, 2, 3])
+# no = np.array([0, 0, 0, 1])
 
-n1 = np.append(ni, np.array(no))
-print(n1)
+# n1 = np.append(ni, np.array(no))
+# print(n1)
 
 
-x = [[1, 2], [1, 2, 3], [1]]
-y = np.array([np.array(xi) for xi in x])
-print(y)
+# x = [[1, 2], [1, 2, 3], [1]]
+# y = np.array([np.array(xi) for xi in x])
+# print(y)
+
+from process_data import *
+
+# test = [35,42,32]
+# voice=test
+
+# shift_key = []
+# for i in range(len(voice)-1):
+#     shift = voice[i+1] - voice[i]
+#     shift_key.append(shift)
+
+# shift_key = list(set(shift_key))
+
+# print(shift_key)
+
+# processed_data = []
+
+# for i in range(1,len(voice)):
+#     current, previous = voice[i], voice[i-1]
+#     pitch_features = get_pitch_features(current)
+#     shift_one_hot = [0] * len(shift_key)
+#     pitch_shift = current - previous
+#     shift_one_hot[shift_key.index(pitch_shift)] = 1 #set one hod encoing vector for the pitch shift
+
+#     processed_data.append(pitch_features + shift_one_hot)
+
+# print(processed_data)
+
+data, shift_key = extract_features()
+
+print("key", len(shift_key), shift_key)
+
+inputs,outputs = create_inputs_outputs_from_data(data, shift_key, 2)
+
+last_input = inputs[-1]
+print("last:", last_input)
+
+probs = [0]*len(shift_key)
+probs[0]=1 # +1
+probs=np.array(probs)
+print("probs:", probs)
+
+predicted_shift = get_shift_from_probability(probs, shift_key)
+
+print("pred_shift:", predicted_shift)
+
+add_predicted_value(inputs, 68, predicted_shift, shift_key)
+
+print("new last:", inputs[-1])
