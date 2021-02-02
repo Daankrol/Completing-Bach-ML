@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from data_frame import generate_dataframe
 import numpy as np
-import process_data
+from process_data import *
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
@@ -14,26 +14,20 @@ class WindowGenerator():
                  label_columns=None, use_features=True):
         self.batch_size = batch_size
         # load all input and teacher values
-        self.df, self.pitch_conversion_key = generate_dataframe(voice_number=voice_number, use_features=use_features)
+        self.df, self.pitch_conversion_key = extract_features()        )
         # Normalise features
-        self.mean_df = self.df.iloc[:, :6].mean()
-        self.std_df = self.df.iloc[:, :6].std()
-        self.df.iloc[:, :6] = (
-            self.df.iloc[:, :6] - self.mean_df) / self.std_df
+        self.mean_df = self.df.iloc[:, :5].mean()
+        self.std_df = self.df.iloc[:, :5].std()
+        self.df.iloc[:, :5] = (
+            self.df.iloc[:, :5] - self.mean_df) / self.std_df
         
         labels_all = list(self.df.columns)
-        self.label_columns = labels_all[6:]
-        self.input_columns = labels_all[:6]
+        self.label_columns = labels_all[5:]
 
         # Work out the label column indices.
         if self.label_columns is not None:
             self.label_columns_indices = {
                 name: i for i, name in enumerate(self.label_columns)}
-
-        # Work out the inputs column indices.
-        if self.input_columns is not None:
-            self.input_columns_indices = {
-                name: i for i, name in enumerate(self.input_columns)}
 
         self.column_indices = {name: i for i,
                                name in enumerate(self.df.columns)}
@@ -129,13 +123,6 @@ class WindowGenerator():
             labels = tf.stack(
                 [labels[:, :, self.column_indices[name]]
                     for name in self.label_columns],
-                axis=-1)
-
-        # all features as input
-        if self.input_columns is not None:
-            inputs = tf.stack(
-                [inputs[:, :, self.column_indices[name]]
-                    for name in self.input_columns],
                 axis=-1)
 
         # Slicing doesn't preserve static shape information, so set the shapes

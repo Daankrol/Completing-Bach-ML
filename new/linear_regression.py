@@ -21,7 +21,7 @@ def predict_bach():
     data, shift_key = extract_features(voice_number=VOICE)
     inputs, outputs = create_inputs_outputs_from_data(data, shift_key, window_size=window_size)
 
-    model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
+    model = linearRegression()
     model.fit(inputs, outputs)
         
     predictions = []
