@@ -2,14 +2,18 @@ import numpy as np
 from sklearn.linear_model import LinearRegression, Ridge, RidgeCV, LogisticRegression
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures 
 from sklearn.model_selection import KFold, cross_val_score
-from methods import *
+from methods import SelectionMethod
 from process_data import *
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import copy
 import itertools
 import os
-from sklearn.utils import _pandas_indexing 
+from tensorflow import keras
+import tensorflow as tf
+from tensorflow.keras.layers import Dense
+from sklearn.utils import _pandas_indexing
+from sklearn.utils.extmath import softmax
 mpl.use('TkAgg')
 
 def predict_bach():
@@ -19,20 +23,45 @@ def predict_bach():
     window_size=30
 
     data, shift_key = extract_features(voice_number=VOICE)
+    print("shift_key:", shift_key)
     inputs, outputs = create_inputs_outputs_from_data(data, shift_key, window_size=window_size)
+    
+    #------------------------------------------
 
-    model = LogisticRegression(multi_class='multinomial', solver='lbfgs')
-    model.fit(inputs, outputs)
-        
+    # model = LinearRegression()
+    # model.fit(inputs,outputs)
+
+    #------------------------------------------
+
+    outputs_values = []
+    outputs = np.array(outputs)
+
+    for vector in outputs:
+        value = get_shift_from_probability(vector, shift_key, SelectionMethod.TOP, n=1)
+        outputs_values.append(value)
+
+    model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=500)
+    model.fit(inputs, outputs_values)
+
+    print("sklearn key:", model.classes_)
+    # this is the key as used by the predict() from sklearn/linearmodel. Extract this such that we can use our ouwn prediciton methods
+    shift_key = list(model.classes_) 
+
+    #------------------------------------------
+
     predictions = []
     for i in range(1000):
 
         latest_input = inputs[-1]
         latest_pitch = predictions[-1] if i>0 else get_voice(VOICE)[-1]
         
-        probs = model.predict([latest_input])[0]
+        probs = model.predict_proba([latest_input])[0]
+        soft_probs = softmax([probs])[0]
 
-        predicted_shift = get_shift_from_probability(probs, shift_key, method=selection_method)
+        # print("probs:", probs)
+        # print("soft_probs:", soft_probs)
+
+        predicted_shift = get_shift_from_probability(soft_probs, shift_key, method=selection_method, n=2)
         predicted_pitch = add_predicted_value(inputs, latest_pitch, predicted_shift, shift_key)
 
         predictions.append(predicted_pitch)
@@ -52,3 +81,12 @@ def predict_bach():
     plt.show()
 
 predict_bach()
+
+# model = keras.Sequential([
+#   Dense(1, use_bias=True, input_shape=(1,))
+# ])
+# print(outputs[-1])
+# # breakpoint()
+# early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_accuracy', patience=10)
+# model.compile(loss='categorical_cross_entropy', optimizer='adam')
+# model.fit(x=inputs, y=outputs, validation_split=0.8, callbacks=[early_stopping], verbose=0)
