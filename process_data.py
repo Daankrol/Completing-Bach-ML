@@ -207,7 +207,7 @@ def get_log_pitch(midi_note):
     n = midi_note - 69  # 69 is the midi of A over middle C
     fx = pow(2, (n / 12)) * 440  # 220 is the frequency of A over middle C
     min_note = 0  # FIXME fixed for voice 0
-    max_note = 62  # FIXME should be dynamic. v0=76, v1=.., v2=62, v3=...
+    max_note = 76  # FIXME should be dynamic. v0=76, v1=.., v2=62, v3=...
     min_p = 2 * np.log2(pow(2, ((min_note - 69) / 12)) * 440)
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2

@@ -17,7 +17,7 @@ class WindowGenerator():
         # load all input and teacher values
         self.dat, self.shift_conversion_key = extract_features(voice_number=voice_number)
 
-        self.feature_names = ["log_pitch","chorma_x", "chroma_y", "c5_x", "c5_y"]
+        self.feature_names = ["log_pitch","chroma_x", "chroma_y", "c5_x", "c5_y"]
         self.one_hot_names = []
         for i in range(len(self.shift_conversion_key)):
             self.one_hot_names.append("shift_%d" % i)
@@ -25,11 +25,11 @@ class WindowGenerator():
         self.column_names = self.feature_names + self.one_hot_names 
 
         self.df = pd.DataFrame(data = self.dat, dtype=float, columns=self.column_names)
-        # Normalise features
-        self.mean_df = self.df.iloc[:, :5].mean()
-        self.std_df = self.df.iloc[:, :5].std()
-        self.df.iloc[:, :5] = (
-            self.df.iloc[:, :5] - self.mean_df) / self.std_df
+#         # Normalise features
+#         self.mean_df = self.df.iloc[:, :5].mean()
+#         self.std_df = self.df.iloc[:, :5].std()
+#         self.df.iloc[:, :5] = (
+#             self.df.iloc[:, :5] - self.mean_df) / self.std_df
         
         labels_all = list(self.df.columns)
         self.label_columns = labels_all[5:]
@@ -42,6 +42,21 @@ class WindowGenerator():
         self.column_indices = {name: i for i,
                                name in enumerate(self.df.columns)}
 
+        # split the data
+        n = len(self.df)
+        self.train_df = self.df[0:int(n*0.7)]  # train split 70% of data
+        self.val_df = self.df[int(n*0.7):int(n*0.9)]  # validation split 20% of data
+        self.test_df = self.df[int(n*0.9):]  # test split 10% of data
+        
+        # normalise data
+        self.mean_train = self.train_df.iloc[:,:5].mean()
+        self.std_train = self.train_df.iloc[:,:5].std()
+        
+        self.train_df.iloc[:,:5] = (self.train_df.iloc[:,:5] - self.mean_train) / self.std_train
+        self.val_df.iloc[:,:5] = (self.val_df.iloc[:,:5] - self.mean_train) / self.std_train
+        self.test_df.iloc[:,:5] = (self.test_df.iloc[:,:5] - self.mean_train) / self.std_train
+        
+        
         # Work out the window parameters.
         self.input_width = input_width
         self.label_width = label_width
@@ -61,12 +76,11 @@ class WindowGenerator():
         
 #         Make timeseries dataset with windows
         self.full_dataset = self.make_dataset(self.df)
-            
-        n = sum(1 for _ in self.full_dataset)
-        # split data
-        self.train = self.full_dataset.take(int(n*0.7))
-        self.val = self.full_dataset.take(int(n*0.2))
-        self.test = self.full_dataset.take(int(n*0.1))
+        self.train = self.make_dataset(self.train_df)
+        self.val = self.make_dataset(self.val_df)
+        self.test = self.make_dataset(self.test_df)
+        
+        
         
     @property
     def example(self):
@@ -79,39 +93,6 @@ class WindowGenerator():
             self._example = result
         return result
     
-#         self.train_df = self.full_dataset[0:int(n*0.7)]  # train split 70% of data
-#         self.val_df = self.full[int(n*0.7):int(n*0.9)]  # validation split 20% of data
-#         self.test_df = self.full[int(n*0.9):]  # test split 10% of data
-        
-        # Normalize the data
-#         self.train_mean = self.train_df.iloc[:, :6].mean()
-#         self.train_std = self.train_df.iloc[:, :6].std()
-#         self.train_df.iloc[:, :6] = (
-#             self.train_df.iloc[:, :6] - self.train_mean) / self.train_std
-#         self.val_df.iloc[:, :6] = (
-#             self.val_df.iloc[:, :6] - self.train_mean) / self.train_std
-#         self.test_df.iloc[:, :6] = (
-#             self.test_df.iloc[:, :6] - self.train_mean) / self.train_std
-
-        # make_plot(train_std, df.iloc[:, :5], train_mean)
-
-        # Store the raw data.
-        # self.train_df = train_df
-        # self.val_df = val_df
-        # self.test_df = test_df
-    
-#     @property
-#     def train(self):
-#         return self.make_dataset(self.train_df)
-
-#     @property
-#     def val(self):
-#         return self.make_dataset(self.val_df)
-
-#     @property
-#     def test(self):
-#         return self.make_dataset(self.test_df)
-
     @property
     def test_no_shuffle(self):
         return self.make_dataset(self.df, shuffle=False).unbatch()    
@@ -120,23 +101,29 @@ class WindowGenerator():
         return '\n'.join([
             f'Total window size: {self.total_window_size}',
             f'Input indices: {self.input_indices}',
+            f'Input columns name(s): {self.column_names}'
             f'Label indices: {self.label_indices}',
             f'Label column name(s): {self.label_columns}'])
 
     def split_window(self, features):
         inputs = features[:, self.input_slice, :]
         labels = features[:, self.labels_slice, :]
-
+#         print('------------------------')
+#         print(inputs)
+#         print(labels)
+#         print(np.shape(labels))
+#         print(self.label_columns)
         # label columns is a one-hot encoding vector
         if self.label_columns is not None:
             labels = tf.stack(
                 [labels[:, :, self.column_indices[name]]
                     for name in self.label_columns],
                 axis=-1)
-
+        
         # Slicing doesn't preserve static shape information, so set the shapes
         # manually. This way the `tf.data.Datasets` are easier to inspect.
         inputs.set_shape([None, self.input_width, None])
+#         tf.reshape(labels, [None, self.label_width])
         labels.set_shape([None, self.label_width, None])
 
         return inputs, labels
