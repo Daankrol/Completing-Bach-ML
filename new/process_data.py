@@ -143,35 +143,6 @@ def get_shift_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=3):
 
     return predicted
 
-
-def add_predicted_value(inputs, latest_pitch, shift, shift_key):
-    """
-    Add predicted shift and create new window for next iteration
-    :param inputs:
-    :param latest_pitch: previous pitch value (absolute/actual value, not the shift)
-    :param shift: shift value predicted from model output
-    :param shift_key:
-    :return: predicted_pitch
-    """
-
-    old_input = inputs[-1] #latest input window
-    one_hot_length = len(shift_key)
-
-    predicted_pitch = latest_pitch + shift
-
-    pitch_features = get_pitch_features(predicted_pitch)
-    shift_one_hot = [0] * one_hot_length
-    shift_one_hot[shift_key.index(shift)] = 1
-
-    new_data_entry = pitch_features + shift_one_hot
-
-    #remove the oldest data point in the most recent window and add the prediction accordingly
-    new_window = old_input[len(new_data_entry):] + new_data_entry
-    inputs.append(new_window)
-
-    return predicted_pitch
-
-
 def get_pitch_features(midi_note):
     """
     Returns thelog pitch, x,y coordinate of the croma circle and x,y coordinate for the circle of fifths
@@ -212,3 +183,30 @@ def get_log_pitch(midi_note):
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
     return log_pitch   
+
+def add_predicted_value(inputs, latest_pitch, shift, shift_key):
+    """
+    Add predicted shift and create new window for next iteration
+    :param inputs:
+    :param latest_pitch: previous pitch value (absolute/actual value, not the shift)
+    :param shift: shift value predicted from model output
+    :param shift_key:
+    :return: predicted_pitch
+    """
+
+    old_input = inputs[-1] #latest input window
+    one_hot_length = len(shift_key)
+
+    predicted_pitch = latest_pitch + shift
+
+    pitch_features = get_pitch_features(predicted_pitch)
+    shift_one_hot = [0] * one_hot_length
+    shift_one_hot[shift_key.index(shift)] = 1
+
+    new_data_entry = pitch_features + shift_one_hot
+
+    #remove the oldest data point in the most recent window and add the prediction accordingly
+    new_window = old_input[len(new_data_entry):] + new_data_entry
+    inputs.append(new_window)
+
+    return predicted_pitch
