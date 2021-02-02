@@ -1,25 +1,31 @@
 # import tensorflow as tf
 import numpy as np
-# from window_generator import WindowGenerator
+from process_data import *
+from window_generator import WindowGenerator
+import tensorflow as tf
 
 # # TODO label_columns does not exist yet
-# w2 = WindowGenerator(input_width=6, label_width=1, shift=1)
-# print(w2)
+w2 = WindowGenerator(input_width=6, label_width=1, shift=1, voice_number=0)
+print(w2)
 
-# example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
-#                            np.array(w2.train_df[100:100+w2.total_window_size]),
-#                            np.array(w2.train_df[200:200+w2.total_window_size])])
+df = w2.df
 
-# example_inputs, example_labels = w2.split_window(example_window)
+print(df.head())
 
-# # print(example_labels)
+example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
+                           np.array(w2.train_df[100:100+w2.total_window_size]),
+                           np.array(w2.train_df[200:200+w2.total_window_size])])
 
-# # print(example_inputs)
+example_inputs, example_labels = w2.split_window(example_window)
 
-# # print('All shapes are: (batch, time, features)')
-# # print(f'Window shape: {example_window.shape}')
-# # print(f'Inputs shape: {example_inputs.shape}')
-# # print(f'labels shape: {example_labels.shape}')
+print(example_labels)
+
+print(example_inputs)
+
+print('All shapes are: (batch, time, features)')
+print(f'Window shape: {example_window.shape}')
+print(f'Inputs shape: {example_inputs.shape}')
+print(f'labels shape: {example_labels.shape}')
 
 # # w2.make_dataset()
 
@@ -47,7 +53,7 @@ import numpy as np
 # y = np.array([np.array(xi) for xi in x])
 # print(y)
 
-from process_data import *
+
 
 # test = [35,42,32]
 # voice=test
@@ -74,24 +80,24 @@ from process_data import *
 
 # print(processed_data)
 
-data, shift_key = extract_features()
+# data, shift_key = extract_features()
 
-print("key", len(shift_key), shift_key)
+# print("key", len(shift_key), shift_key)
 
-inputs,outputs = create_inputs_outputs_from_data(data, shift_key, 2)
+# inputs,outputs = create_inputs_outputs_from_data(data, shift_key, 2)
 
-last_input = inputs[-1]
-print("last:", last_input)
+# last_input = inputs[-1]
+# print("last:", last_input)
 
-probs = [0]*len(shift_key)
-probs[0]=1 # +1
-probs=np.array(probs)
-print("probs:", probs)
+# probs = [0]*len(shift_key)
+# probs[0]=1 # +1
+# probs=np.array(probs)
+# print("probs:", probs)
 
-predicted_shift = get_shift_from_probability(probs, shift_key)
+# predicted_shift = get_shift_from_probability(probs, shift_key)
 
-print("pred_shift:", predicted_shift)
+# print("pred_shift:", predicted_shift)
 
-add_predicted_value(inputs, 68, predicted_shift, shift_key)
+# add_predicted_value(inputs, 68, predicted_shift, shift_key)
 
-print("new last:", inputs[-1])
+# print("new last:", inputs[-1])

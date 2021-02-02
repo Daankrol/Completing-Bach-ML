@@ -4,6 +4,7 @@ import seaborn as sns
 from data_frame import generate_dataframe
 import numpy as np
 from process_data import *
+import pandas as pd
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
@@ -14,7 +15,16 @@ class WindowGenerator():
                  label_columns=None, use_features=True):
         self.batch_size = batch_size
         # load all input and teacher values
-        self.df, self.pitch_conversion_key = extract_features()        )
+        self.dat, self.shift_conversion_key = extract_features(voice_number=voice_number)
+
+        self.feature_names = ["log_pitch","chorma_x", "chroma_y", "c5_x", "c5_y"]
+        self.one_hot_names = []
+        for i in range(len(self.shift_conversion_key)):
+            self.one_hot_names.append("shift_%d" % i)
+
+        self.column_names = self.feature_names + self.one_hot_names 
+
+        self.df = pd.DataFrame(data = self.dat, dtype=float, columns=self.column_names)
         # Normalise features
         self.mean_df = self.df.iloc[:, :5].mean()
         self.std_df = self.df.iloc[:, :5].std()
@@ -111,7 +121,6 @@ class WindowGenerator():
             f'Total window size: {self.total_window_size}',
             f'Input indices: {self.input_indices}',
             f'Label indices: {self.label_indices}',
-            f'Input column names(s): {self.input_columns}',
             f'Label column name(s): {self.label_columns}'])
 
     def split_window(self, features):
