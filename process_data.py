@@ -1,4 +1,4 @@
-cximport numpy as np
+import numpy as np
 import random
 import itertools
 from methods import SelectionMethod

@@ -1,5 +1,28 @@
-# import tensorflow as tf
+
+from process_data import *
 import numpy as np
+import matplotlib.pyplot as plt
+
+
+# def get_break_points()
+
+voice0 = get_voice(0, False)
+
+dur = len(voice0)
+
+time = np.arange(0, dur, 1) 
+time = time * (1/16)
+
+
+plt.clf()
+plt.plot(time, voice0, 'b-')
+plt.title("The soprano voice")
+plt.xlabel("Time (s)")
+plt.ylabel("MIDI note")
+plt.savefig('voices.png')
+plt.show()
+
+
 # from window_generator import WindowGenerator
 
 # # TODO label_columns does not exist yet
@@ -47,8 +70,6 @@ import numpy as np
 # y = np.array([np.array(xi) for xi in x])
 # print(y)
 
-from process_data import *
-
 # test = [35,42,32]
 # voice=test
 
@@ -74,24 +95,24 @@ from process_data import *
 
 # print(processed_data)
 
-data, shift_key = extract_features()
+# data, shift_key = extract_features()
 
-print("key", len(shift_key), shift_key)
+# print("key", len(shift_key), shift_key)
 
-inputs,outputs = create_inputs_outputs_from_data(data, shift_key, 2)
+# inputs,outputs = create_inputs_outputs_from_data(data, shift_key, 2)
 
-last_input = inputs[-1]
-print("last:", last_input)
+# last_input = inputs[-1]
+# print("last:", last_input)
 
-probs = [0]*len(shift_key)
-probs[0]=1 # +1
-probs=np.array(probs)
-print("probs:", probs)
+# probs = [0]*len(shift_key)
+# probs[0]=1 # +1
+# probs=np.array(probs)
+# print("probs:", probs)
 
-predicted_shift = get_shift_from_probability(probs, shift_key)
+# predicted_shift = get_shift_from_probability(probs, shift_key)
 
-print("pred_shift:", predicted_shift)
+# print("pred_shift:", predicted_shift)
 
-add_predicted_value(inputs, 68, predicted_shift, shift_key)
+# add_predicted_value(inputs, 68, predicted_shift, shift_key)
 
-print("new last:", inputs[-1])
+# print("new last:", inputs[-1])

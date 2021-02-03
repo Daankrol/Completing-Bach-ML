@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.linear_model import LinearRegression, Ridge, RidgeCV, LogisticRegression
+from sklearn.linear_model import LinearRegression, Ridge, RidgeCV, LogisticRegression, LogisticRegressionCV
 from sklearn.preprocessing import StandardScaler, PolynomialFeatures 
 from sklearn.model_selection import KFold, cross_val_score
 from methods import SelectionMethod
@@ -20,7 +20,7 @@ def predict_bach():
 
     VOICE = 0
     selection_method = SelectionMethod.PROB
-    window_size=30
+    window_size = 35
 
     data, shift_key = extract_features(voice_number=VOICE)
     print("shift_key:", shift_key)
@@ -81,6 +81,49 @@ def predict_bach():
     plt.show()
 
 predict_bach()
+
+
+def score_for_window_size():
+
+    VOICE = 0
+    selection_method = SelectionMethod.PROB
+    window_size=20
+
+    data, shift_key = extract_features(voice_number=VOICE)
+    print("shift_key:", shift_key)
+
+    windows=[]
+    scores=[]
+
+    inputs, outputs = create_inputs_outputs_from_data(data, shift_key, window_size=window_size)
+    for window_size in range(1,50,2):
+        
+        inputs, outputs = create_inputs_outputs_from_data(data, shift_key, window_size=window_size)
+
+        outputs_values = []
+        outputs = np.array(outputs)
+
+        for vector in outputs:
+            value = get_shift_from_probability(vector, shift_key, SelectionMethod.TOP, n=1)
+            outputs_values.append(value)
+
+        model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
+        model.fit(inputs, outputs_values)
+        model_score = model.score(inputs, outputs_values)
+
+        print(f"windowsize: {window_size} scoring done. score is {model_score}")
+
+        windows.append(window_size)
+        scores.append(model_score)
+
+    plt.clf()
+    plt.plot(windows, scores, 'b--')
+    plt.savefig('window_scores.png')
+    plt.show()
+    
+
+# score_for_window_size()
+
 
 # model = keras.Sequential([
 #   Dense(1, use_bias=True, input_shape=(1,))
