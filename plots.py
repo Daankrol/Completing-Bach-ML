@@ -16,6 +16,8 @@ def plot_voice():
     time_without = np.arange(0, len(voice_without), 1) 
     time_without = time_without * (1/16)
 
+    plt.figure(figsize=(10,4))
+
     plt.clf()
 
     ax1 = plt.subplot(212)
