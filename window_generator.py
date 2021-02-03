@@ -125,6 +125,7 @@ class WindowGenerator():
         inputs.set_shape([None, self.input_width, None])
 #         tf.reshape(labels, [None, self.label_width])
         labels.set_shape([None, self.label_width, None])
+        labels = tf.squeeze(labels, axis=1)
 
         return inputs, labels
 

@@ -54,7 +54,7 @@ def extract_features(voice_number=0):
     
     for i in range(1,len(voice)):
         current, previous = voice[i], voice[i-1]
-        pitch_features = get_pitch_features(current)
+        pitch_features = get_pitch_features(current, voice=voice_number)
         shift_one_hot = [0] * len(shift_key)
         pitch_shift = current - previous
         shift_one_hot[shift_key.index(pitch_shift)] = 1 #set one hod encoing vector for the pitch shift
@@ -144,7 +144,7 @@ def get_shift_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=3):
     return predicted
 
 
-def add_predicted_value(inputs, latest_pitch, shift, shift_key):
+def add_predicted_value(inputs, latest_pitch, shift, shift_key, voice):
     """
     Add predicted shift and create new window for next iteration
     :param inputs:
@@ -159,7 +159,7 @@ def add_predicted_value(inputs, latest_pitch, shift, shift_key):
 
     predicted_pitch = latest_pitch + shift
 
-    pitch_features = get_pitch_features(predicted_pitch)
+    pitch_features = get_pitch_features(predicted_pitch, voice)
     shift_one_hot = [0] * one_hot_length
     shift_one_hot[shift_key.index(shift)] = 1
 
@@ -172,7 +172,7 @@ def add_predicted_value(inputs, latest_pitch, shift, shift_key):
     return predicted_pitch
 
 
-def get_pitch_features(midi_note):
+def get_pitch_features(midi_note, voice):
     """
     Returns thelog pitch, x,y coordinate of the croma circle and x,y coordinate for the circle of fifths
     :param midi_note:
@@ -189,7 +189,7 @@ def get_pitch_features(midi_note):
     chroma_angle = (chroma[note]) * (360 / 12)
     c5_angle = (c5[note]) * (360 / 12)
 
-    log_pitch = get_log_pitch(midi_note)
+    log_pitch = get_log_pitch(midi_note, voice)
     chroma_x = radius_chroma * np.sin(np.deg2rad(chroma_angle))
     chroma_y = radius_chroma * np.cos(np.deg2rad(chroma_angle))
     c5_x = radius_c5 * np.sin(np.deg2rad(c5_angle))
@@ -198,16 +198,18 @@ def get_pitch_features(midi_note):
     return [log_pitch, chroma_x, chroma_y, c5_x, c5_y]
 
 
-def get_log_pitch(midi_note):
+def get_log_pitch(midi_note, voice):
     """
     Returning the log_pitch of a midi note
     :param midi_note:
     :return:
     """
+    max_notes = [76, 71, 62, 54]  # per voice number
+    min_notes = [54,45,40,28]
     n = midi_note - 69  # 69 is the midi of A over middle C
     fx = pow(2, (n / 12)) * 440  # 220 is the frequency of A over middle C
-    min_note = 0  # FIXME fixed for voice 0
-    max_note = 76  # FIXME should be dynamic. v0=76, v1=.., v2=62, v3=...
+    max_note = max_notes[voice]
+    min_note = 0 
     min_p = 2 * np.log2(pow(2, ((min_note - 69) / 12)) * 440)
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
