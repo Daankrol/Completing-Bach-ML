@@ -3,7 +3,10 @@ addpath('supreme_bach.txt');
 
 % load the data: 2 voices in columns
 load supreme_bach.txt -ascii;
-%%%%%%%% transform a voice into a soundvector that can be played by Matlab 
+%%%%%%%% transform a voice into a soundvector that can be played by Matlab
+
+%for saving an audio file
+load handel.mat
 
 % choose a voice 
 chosenVoice = 1;
@@ -43,4 +46,5 @@ end
 % add the two soundvectors to get a 2-voice score
 soundvector = soundvector1;
 sound(soundvector1(:), 10000);
+% audiowrite("Example.wav", soundvector, 8192) %8912 Hz is the default sample rate for the sound() function
 

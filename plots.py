@@ -36,7 +36,7 @@ def plot_voice():
     plt.savefig('voice.png')
     plt.show()
 
-plot_voice()
+# plot_voice()
 
 def plot_pitch_hist():
     voice = get_voice(VOICE)
@@ -68,17 +68,49 @@ def plot_shift_hist():
     voice = get_voice(VOICE)
     shifts = get_all_shifts(voice)
 
+    plt.figure(figsize=(4.5,4))
+
     plt.clf()
-    plt.hist(shifts, bins=np.unique(np.array(shifts)))
+    plt.hist(shifts, bins=np.unique(np.array(shifts)), edgecolor="black")
     plt.title("MIDI shift occurence")
     plt.xlabel("MIDI value with respect to its predecessor")
     plt.ylabel("Frequency")
     plt.ylim(0, 180)
 
     sub_axes = plt.axes([.62, .6, .25, .25]) 
-    sub_axes.hist(shifts, bins=np.unique(np.array(shifts)))
+    sub_axes.hist(shifts, bins=np.unique(np.array(shifts)), edgecolor="black")
 
     plt.savefig('shift_hist.png')
     plt.show()
 
 # plot_shift_hist()
+
+def plot_predicted_logistic():
+
+    file_input = open("supreme_bach_nice.txt", 'r')
+    sounds = file_input.readlines()
+
+    predictions = []
+    for i in range(0, len(sounds)):
+        predictions.append(int(sounds[i]))
+
+    plt.figure(figsize=(10,4))
+
+    voice = get_voice(VOICE)[-500:]
+    plt.clf()
+    plt.plot(voice, 'b-')
+    plt.plot(range(len(voice), len(voice)+len(predictions)), predictions, 'r-')
+    plt.title("A predicted continuation of the soprano voice")
+    plt.ylabel("MIDI note value")
+    plt.xlabel("index")
+
+    zoom=40
+
+    sub_axes = plt.axes([.62, .2, .2, .2])
+    sub_axes.plot(range(len(voice)-len(voice[-zoom:]), len(voice)), voice[-zoom:], 'b-')
+    plt.plot(range(len(voice), len(voice)+len(predictions[:zoom])), predictions[:zoom], 'r-')
+
+    plt.savefig('logistic_predicted.png')
+    plt.show()
+
+plot_predicted_logistic()
