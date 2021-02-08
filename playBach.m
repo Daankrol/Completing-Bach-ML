@@ -1,8 +1,8 @@
 % play solutions
-addpath('supreme_bach.txt');
+addpath('supreme_bach_nice.txt');
 
 % load the data: 2 voices in columns
-load supreme_bach.txt -ascii;
+load supreme_bach_nice.txt -ascii;
 %%%%%%%% transform a voice into a soundvector that can be played by Matlab 
 
 % choose a voice 

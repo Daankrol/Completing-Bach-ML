@@ -106,7 +106,7 @@ def plot_predicted_logistic():
 
     zoom=40
 
-    sub_axes = plt.axes([.62, .2, .2, .2])
+    sub_axes = plt.axes([.2, .6, .2, .2])
     sub_axes.plot(range(len(voice)-len(voice[-zoom:]), len(voice)), voice[-zoom:], 'b-')
     plt.plot(range(len(voice), len(voice)+len(predictions[:zoom])), predictions[:zoom], 'r-')
 
