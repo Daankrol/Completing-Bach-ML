@@ -1,6 +1,7 @@
 
 from process_data import *
 import numpy as np
+<<<<<<< HEAD
 import matplotlib.pyplot as plt
 
 
@@ -24,25 +25,34 @@ plt.show()
 
 
 # from window_generator import WindowGenerator
+=======
+from process_data import *
+from window_generator import WindowGenerator
+import tensorflow as tf
+>>>>>>> new_shifting
 
 # # TODO label_columns does not exist yet
-# w2 = WindowGenerator(input_width=6, label_width=1, shift=1)
-# print(w2)
+w2 = WindowGenerator(input_width=6, label_width=1, shift=1, voice_number=0)
+print(w2)
 
-# example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
-#                            np.array(w2.train_df[100:100+w2.total_window_size]),
-#                            np.array(w2.train_df[200:200+w2.total_window_size])])
+df = w2.df
 
-# example_inputs, example_labels = w2.split_window(example_window)
+print(df.head())
 
-# # print(example_labels)
+example_window = tf.stack([np.array(w2.train_df[:w2.total_window_size]),
+                           np.array(w2.train_df[100:100+w2.total_window_size]),
+                           np.array(w2.train_df[200:200+w2.total_window_size])])
 
-# # print(example_inputs)
+example_inputs, example_labels = w2.split_window(example_window)
 
-# # print('All shapes are: (batch, time, features)')
-# # print(f'Window shape: {example_window.shape}')
-# # print(f'Inputs shape: {example_inputs.shape}')
-# # print(f'labels shape: {example_labels.shape}')
+print(example_labels)
+
+print(example_inputs)
+
+print('All shapes are: (batch, time, features)')
+print(f'Window shape: {example_window.shape}')
+print(f'Inputs shape: {example_inputs.shape}')
+print(f'labels shape: {example_labels.shape}')
 
 # # w2.make_dataset()
 
@@ -70,6 +80,11 @@ plt.show()
 # y = np.array([np.array(xi) for xi in x])
 # print(y)
 
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> new_shifting
 # test = [35,42,32]
 # voice=test
 
