@@ -16,6 +16,28 @@ from sklearn.utils import _pandas_indexing
 from sklearn.utils.extmath import softmax
 mpl.use('TkAgg')
 
+def get_standardized_input(inputs, window_size, n_features):
+
+    inputs_array = np.array(inputs)
+    inputs_reshaped = np.reshape(inputs_array, (len(inputs_array)*window_size, n_features))
+    
+    scaler = StandardScaler().fit(inputs_reshaped)
+
+    inputs_standard = scaler.transform(inputs_reshaped)
+    inputs_standard = np.reshape(inputs_standard, (inputs_array.shape))
+
+    return scaler, inputs_standard
+
+def standardize_input(latest_input, window_size, scaler,n_features):
+
+    latest_input_array = np.array(latest_input)
+    latest_input_reshaped = np.reshape(latest_input_array, (window_size, n_features))
+
+    latest_input_standard = scaler.transform(latest_input_reshaped)
+    latest_input_standard = np.reshape(latest_input_standard, (latest_input_array.shape))
+    
+    return latest_input_standard
+
 def predict_bach():
 
     VOICE = 0
@@ -23,8 +45,10 @@ def predict_bach():
     window_size = 35
 
     data, shift_key = extract_features(voice_number=VOICE)
-    print("shift_key:", shift_key)
     inputs, outputs = create_inputs_outputs_from_data(data, shift_key, window_size=window_size)
+
+    n_features = len(data[1])
+    scaler, inputs_standard = get_standardized_input(inputs, window_size, n_features)
 
     outputs_values = []
     outputs = np.array(outputs)
@@ -35,7 +59,7 @@ def predict_bach():
         outputs_values.append(value)
 
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=500)
-    model.fit(inputs, outputs_values)
+    model.fit(inputs_standard, outputs_values)
 
     print("sklearn key:", model.classes_)
     # this is the key as used by the predict() from sklearn/linearmodel. Extract this such that we can use our ouwn prediciton methods
@@ -47,6 +71,8 @@ def predict_bach():
     for i in range(500):
 
         latest_input = inputs[-1]
+        latest_input = standardize_input(latest_input, window_size, scaler, n_features)
+
         latest_pitch = predictions[-1]
         
         probs = model.predict_proba([latest_input])[0]
