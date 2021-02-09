@@ -12,7 +12,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'  # or any {'0', '1', '2'}
 
 class WindowGenerator():
     def __init__(self, input_width, label_width, shift, voice_number, batch_size=32,
-                 label_columns=None, use_features=True):
+                 label_columns=None, use_features=True, shuffle=True):
         self.batch_size = batch_size
         # load all input and teacher values
         self.dat, self.shift_conversion_key = extract_features(voice_number=voice_number)
@@ -76,9 +76,9 @@ class WindowGenerator():
         
 #         Make timeseries dataset with windows
         self.full_dataset = self.make_dataset(self.df)
-        self.train = self.make_dataset(self.train_df)
-        self.val = self.make_dataset(self.val_df)
-        self.test = self.make_dataset(self.test_df)
+        self.train = self.make_dataset(self.train_df, shuffle=shuffle)
+        self.val = self.make_dataset(self.val_df, shuffle=shuffle)
+        self.test = self.make_dataset(self.test_df, shuffle=shuffle)
         
         
         
