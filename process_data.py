@@ -3,6 +3,7 @@ import random
 import itertools
 from methods import SelectionMethod
 
+
 def get_voice(voice_number=0, remove_zeros=True):
     """
     Get voice
@@ -20,7 +21,7 @@ def get_voice(voice_number=0, remove_zeros=True):
         voice.append(int(voice_all[voice_number]))
 
     if remove_zeros and voice:
-        voice = [pitch for pitch in voice if pitch!=0]
+        voice = [pitch for pitch in voice if pitch != 0]
 
     return voice
 
@@ -51,13 +52,14 @@ def extract_features(voice_number=0):
     shift_key = get_shift_key(voice)
 
     processed_data = []
-    
-    for i in range(1,len(voice)):
+
+    for i in range(1, len(voice)):
         current, previous = voice[i], voice[i-1]
         pitch_features = get_pitch_features(current, voice=voice_number)
         shift_one_hot = [0] * len(shift_key)
         pitch_shift = current - previous
-        shift_one_hot[shift_key.index(pitch_shift)] = 1 #set one hod encoing vector for the pitch shift
+        # set one hod encoing vector for the pitch shift
+        shift_one_hot[shift_key.index(pitch_shift)] = 1
 
         processed_data.append(pitch_features + shift_one_hot)
 
@@ -72,14 +74,14 @@ def create_inputs_outputs_from_data(data, shift_key, window_size=44):
     :param window_size: default: 44
     :return: inputs, outputs
     """
-    inputs= []
-    outputs= []
-    one_hot_length = len(shift_key) # to separate input from output
+    inputs = []
+    outputs = []
+    one_hot_length = len(shift_key)  # to separate input from output
 
     for i in range(window_size, len(data)):
-        
+
         temp_input = []
-        for j in range(window_size, 0, -1): #flattening method
+        for j in range(window_size, 0, -1):  # flattening method
 
             temp_input = temp_input + data[i-j]
 
@@ -88,7 +90,7 @@ def create_inputs_outputs_from_data(data, shift_key, window_size=44):
         inputs.append(temp_input)
         outputs.append(data[i][-one_hot_length:])
 
-    return inputs, outputs 
+    return inputs, outputs
 
 
 def get_shift_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=3):
@@ -143,6 +145,35 @@ def get_shift_from_probability(prob, key, method=SelectionMethod.HIGHEST, n=3):
 
     return predicted
 
+
+def add_predicted_value(inputs, latest_pitch, shift, shift_key, voice):
+    """
+    Add predicted shift and create new window for next iteration
+    :param inputs:
+    :param latest_pitch: previous pitch value (absolute/actual value, not the shift)
+    :param shift: shift value predicted from model output
+    :param shift_key:
+    :return: predicted_pitch
+    """
+
+    old_input = inputs[-1]  # latest input window
+    one_hot_length = len(shift_key)
+
+    predicted_pitch = latest_pitch + shift
+
+    pitch_features = get_pitch_features(predicted_pitch, voice)
+    shift_one_hot = [0] * one_hot_length
+    shift_one_hot[shift_key.index(shift)] = 1
+
+    new_data_entry = pitch_features + shift_one_hot
+
+    # remove the oldest data point in the most recent window and add the prediction accordingly
+    new_window = old_input[len(new_data_entry):] + new_data_entry
+    inputs.append(new_window)
+
+    return predicted_pitch
+
+
 def get_pitch_features(midi_note, voice):
     """
     Returns thelog pitch, x,y coordinate of the croma circle and x,y coordinate for the circle of fifths
@@ -180,12 +211,13 @@ def get_log_pitch(midi_note, voice):
 
     n = midi_note - 69  # 69 is the midi of A over middle C
     fx = pow(2, (n / 12)) * 440  # 220 is the frequency of A over middle C
-    min_note = min_notes[voice]  
-    max_note = max_notes[voice] 
+    min_note = min_notes[voice]
+    max_note = max_notes[voice]
     min_p = 2 * np.log2(pow(2, ((min_note - 69) / 12)) * 440)
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
-    return log_pitch   
+    return log_pitch
+
 
 def add_predicted_value(inputs, latest_pitch, shift, shift_key, voice_number):
     """
@@ -197,7 +229,7 @@ def add_predicted_value(inputs, latest_pitch, shift, shift_key, voice_number):
     :return: predicted_pitch
     """
 
-    old_input = inputs[-1] #latest input window
+    old_input = inputs[-1]  # latest input window
     one_hot_length = len(shift_key)
 
     predicted_pitch = latest_pitch + shift
@@ -208,7 +240,7 @@ def add_predicted_value(inputs, latest_pitch, shift, shift_key, voice_number):
 
     new_data_entry = pitch_features + shift_one_hot
 
-    #remove the oldest data point in the most recent window and add the prediction accordingly
+    # remove the oldest data point in the most recent window and add the prediction accordingly
     new_window = old_input[len(new_data_entry):] + new_data_entry
     inputs.append(new_window)
 
