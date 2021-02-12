@@ -1,7 +1,6 @@
 import tensorflow as tf
 import matplotlib.pyplot as plt
 import seaborn as sns
-from data_frame import generate_dataframe
 import numpy as np
 from process_data import *
 import pandas as pd

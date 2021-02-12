@@ -9,10 +9,6 @@ import matplotlib as mpl
 import copy
 import itertools
 import os
-from tensorflow import keras
-import tensorflow as tf
-from tensorflow.keras.layers import Dense
-from sklearn.utils import _pandas_indexing
 from sklearn.utils.extmath import softmax
 mpl.use('TkAgg')
 
@@ -72,9 +68,7 @@ def predict_bach():
 
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
     model.fit(inputs_standard, outputs_values)
-    print(model.score(inputs_standard, outputs_values))
 
-    print("sklearn key:", model.classes_)
     # this is the key as used by the predict() from sklearn/linearmodel. Extract this such that we can use our ouwn prediciton methods
     shift_key = list(model.classes_) 
 
@@ -112,7 +106,7 @@ def predict_bach():
     plt.title("A predicted continuation of the soprano voice")
     plt.ylabel("MIDI note value")
     plt.xlabel("index")
-    plt.savefig('linear_window' + str(window_size) + '.png')
+    plt.savefig('logistic_window' + str(window_size) + '.png')
     plt.show()
 
 predict_bach()
