@@ -72,6 +72,7 @@ def predict_bach():
 
     model = LogisticRegression(multi_class='multinomial', solver='lbfgs', max_iter=1000)
     model.fit(inputs_standard, outputs_values)
+    print(model.score(inputs_standard, outputs_values))
 
     print("sklearn key:", model.classes_)
     # this is the key as used by the predict() from sklearn/linearmodel. Extract this such that we can use our ouwn prediciton methods

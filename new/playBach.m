@@ -1,8 +1,8 @@
 % play solutions
-% addpath('supreme_bach_nice.txt');
+% addpath('supreme_bach.txt');
 
 % load the data: 2 voices in columns
-load supreme_bach_nice.txt -ascii;
+load supreme_bach.txt -ascii;
 %%%%%%%% transform a voice into a soundvector that can be played by Matlab
 
 %for saving an audio file
@@ -10,7 +10,7 @@ load handel.mat
 
 % choose a voice 
 chosenVoice = 1;
-voice = supreme_bach_nice(:,chosenVoice);
+voice = supreme_bach(:,chosenVoice);
 % plot it to get the Bach feeling 
 % figure(1); plot(voice);
 
@@ -45,6 +45,6 @@ end
 
 % add the two soundvectors to get a 2-voice score
 soundvector = soundvector1;
-% sound(soundvector1(:), 10000);
-audiowrite("LogisticExample.wav", soundvector, 8192) %8912 Hz is the default sample rate for the sound() function
+sound(soundvector1(:), 10000);
+audiowrite("LogisticExample.wav", soundvector, 8192) %8192 Hz is the default sample rate for the sound() function
 
