@@ -180,8 +180,8 @@ def get_log_pitch(midi_note, voice):
 
     n = midi_note - 69  # 69 is the midi of A over middle C
     fx = pow(2, (n / 12)) * 440  # 220 is the frequency of A over middle C
-    min_note = max_notes[voice]  
-    max_note = min_notes[voice] 
+    min_note = min_notes[voice]  
+    max_note = max_notes[voice] 
     min_p = 2 * np.log2(pow(2, ((min_note - 69) / 12)) * 440)
     max_p = 2 * np.log2(pow(2, ((max_note - 69) / 12)) * 440)
     log_pitch = 2 * np.log2(fx) - max_p + (max_p - min_p) / 2
